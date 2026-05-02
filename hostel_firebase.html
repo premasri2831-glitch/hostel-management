@@ -1,0 +1,1432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HostelGuard Pro</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Rajdhani:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<!-- Firebase SDK -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getFirestore, doc, setDoc, getDoc, collection, getDocs, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyDs8H6uCcH6X2k7pNekNoZKbewhZRo2cu8",
+    authDomain: "hostel-management-d22ef.firebaseapp.com",
+    projectId: "hostel-management-d22ef",
+    storageBucket: "hostel-management-d22ef.firebasestorage.app",
+    messagingSenderId: "979236668632",
+    appId: "1:979236668632:web:8b338590f04c4be42003ad"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  // ── Save students to Firestore ──
+  window.fbSaveStudents = async function(students) {
+    try {
+      await setDoc(doc(db, "hostelguard", "students"), { list: students });
+    } catch(e) { console.error("Save students error:", e); }
+  };
+
+  // ── Load students from Firestore ──
+  window.fbLoadStudents = async function() {
+    try {
+      const snap = await getDoc(doc(db, "hostelguard", "students"));
+      if (snap.exists()) return snap.data().list;
+    } catch(e) { console.error("Load students error:", e); }
+    return null;
+  };
+
+  // ── Save leaveReqs ──
+  window.fbSaveLeaves = async function(leaves) {
+    try {
+      await setDoc(doc(db, "hostelguard", "leaves"), { list: leaves });
+    } catch(e) { console.error("Save leaves error:", e); }
+  };
+
+  // ── Load leaveReqs ──
+  window.fbLoadLeaves = async function() {
+    try {
+      const snap = await getDoc(doc(db, "hostelguard", "leaves"));
+      if (snap.exists()) return snap.data().list;
+    } catch(e) { console.error("Load leaves error:", e); }
+    return [];
+  };
+
+  // ── Save attendance ──
+  window.fbSaveAtt = async function(att) {
+    try {
+      await setDoc(doc(db, "hostelguard", "attendance"), { data: att });
+    } catch(e) { console.error("Save att error:", e); }
+  };
+
+  // ── Load attendance ──
+  window.fbLoadAtt = async function() {
+    try {
+      const snap = await getDoc(doc(db, "hostelguard", "attendance"));
+      if (snap.exists()) return snap.data().data;
+    } catch(e) { console.error("Load att error:", e); }
+    return {};
+  };
+
+  // ── Save nSid ──
+  window.fbSaveNSid = async function(nSid) {
+    try {
+      await setDoc(doc(db, "hostelguard", "meta"), { nSid });
+    } catch(e) { console.error("Save nsid error:", e); }
+  };
+
+  // ── Load nSid ──
+  window.fbLoadNSid = async function() {
+    try {
+      const snap = await getDoc(doc(db, "hostelguard", "meta"));
+      if (snap.exists()) return snap.data().nSid;
+    } catch(e) { console.error("Load nsid error:", e); }
+    return 4;
+  };
+
+  // ── Real-time listener: students ──
+  window.fbWatchStudents = function(callback) {
+    onSnapshot(doc(db, "hostelguard", "students"), (snap) => {
+      if (snap.exists()) callback(snap.data().list);
+    });
+  };
+
+  // ── Real-time listener: leaves ──
+  window.fbWatchLeaves = function(callback) {
+    onSnapshot(doc(db, "hostelguard", "leaves"), (snap) => {
+      if (snap.exists()) callback(snap.data().list);
+    });
+  };
+
+  // ── Real-time listener: attendance ──
+  window.fbWatchAtt = function(callback) {
+    onSnapshot(doc(db, "hostelguard", "attendance"), (snap) => {
+      if (snap.exists()) callback(snap.data().data);
+    });
+  };
+
+  // Signal that Firebase is ready
+  window.fbReady = true;
+  window.dispatchEvent(new Event('fbReady'));
+</script>
+<style>
+:root{--bg:#060a12;--surface:#0d1420;--card:#111b2e;--card2:#162035;--border:#1e3050;--accent:#00e5ff;--green:#00e676;--yellow:#ffab00;--red:#ff1744;--purple:#aa00ff;--pink:#f06292;--text:#e8f0fe;--muted:#546e7a;--muted2:#37474f;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Space Grotesk',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;}
+body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;background:radial-gradient(ellipse 60% 40% at 20% 10%,rgba(0,229,255,0.05) 0%,transparent 60%),radial-gradient(ellipse 50% 40% at 80% 80%,rgba(170,0,255,0.05) 0%,transparent 60%),linear-gradient(rgba(0,229,255,0.02) 1px,transparent 1px) 0 0/32px 32px,linear-gradient(90deg,rgba(0,229,255,0.02) 1px,transparent 1px) 0 0/32px 32px;}
+nav{position:sticky;top:0;z-index:200;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;padding:12px 24px;background:rgba(6,10,18,0.94);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);}
+.nav-brand{display:flex;align-items:center;gap:10px;}
+.nav-logo{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,var(--accent),var(--purple));display:flex;align-items:center;justify-content:center;font-size:1rem;box-shadow:0 0 20px rgba(0,229,255,0.3);}
+.nav-title{font-family:'Rajdhani',sans-serif;font-size:1.25rem;font-weight:700;letter-spacing:2px;}
+.nav-title span{color:var(--accent);}
+.nav-tabs{display:flex;gap:3px;flex-wrap:wrap;}
+.nav-tab{padding:7px 14px;border-radius:8px;border:none;background:transparent;color:var(--muted);font-family:'Space Grotesk',sans-serif;font-size:0.82rem;font-weight:500;cursor:pointer;transition:all 0.2s;white-space:nowrap;}
+.nav-tab:hover{color:var(--text);background:var(--border);}
+.nav-tab.active{background:var(--accent);color:#000;font-weight:700;}
+.nav-right{display:flex;align-items:center;gap:10px;}
+.email-badge{font-size:0.7rem;font-weight:700;padding:5px 12px;border-radius:12px;border:1px solid;white-space:nowrap;cursor:pointer;}
+.eb-live{background:rgba(0,229,255,0.12);color:var(--accent);border-color:rgba(0,229,255,0.35);}
+.eb-demo{background:rgba(84,110,122,0.1);color:var(--muted);border-color:var(--muted2);}
+.nav-clock{font-family:'JetBrains Mono',monospace;font-size:0.82rem;color:var(--accent);background:rgba(0,229,255,0.08);border:1px solid rgba(0,229,255,0.2);border-radius:8px;padding:5px 12px;white-space:nowrap;}
+.page{display:none;padding:24px;max-width:1300px;margin:0 auto;position:relative;z-index:1;}
+.page.active{display:block;animation:fadeUp 0.3s ease;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+.page-header{margin-bottom:22px;}
+.chip{display:inline-flex;align-items:center;background:rgba(0,229,255,0.08);border:1px solid rgba(0,229,255,0.2);color:var(--accent);border-radius:20px;font-size:0.69rem;font-weight:700;padding:3px 12px;letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;}
+.page-title{font-family:'Rajdhani',sans-serif;font-size:1.9rem;font-weight:700;letter-spacing:1px;line-height:1.1;}
+.page-sub{color:var(--muted);font-size:0.84rem;margin-top:4px;}
+.card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:22px;margin-bottom:18px;position:relative;overflow:hidden;box-shadow:0 0 40px rgba(0,229,255,0.05);}
+.card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(0,229,255,0.2),transparent);}
+.card-title{font-family:'Rajdhani',sans-serif;font-size:1.08rem;font-weight:600;letter-spacing:1px;margin-bottom:15px;display:flex;align-items:center;gap:8px;}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:18px;}
+.stat-card{background:var(--card2);border:1px solid var(--border);border-radius:13px;padding:17px;text-align:center;transition:transform 0.2s;position:relative;overflow:hidden;}
+.stat-card::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;background:currentColor;opacity:0.22;}
+.stat-card:hover{transform:translateY(-3px);}
+.stat-num{font-family:'Rajdhani',sans-serif;font-size:2.1rem;font-weight:700;line-height:1;}
+.stat-lbl{font-size:0.72rem;color:var(--muted);margin-top:5px;font-weight:500;}
+.timer-grid{display:grid;grid-template-columns:1fr 1fr;gap:13px;margin-bottom:16px;}
+@media(max-width:600px){.timer-grid{grid-template-columns:1fr;}}
+.timer-box{background:var(--card2);border:1px solid var(--border);border-radius:13px;padding:17px;display:flex;align-items:center;gap:13px;transition:all 0.3s;}
+.timer-box.open-slot{border-color:var(--green);box-shadow:0 0 20px rgba(0,230,118,0.12);}
+.timer-box.closed-slot{opacity:0.55;}
+.t-icon{width:46px;height:46px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:1.25rem;flex-shrink:0;}
+.t-ev{background:rgba(0,229,255,0.1);}.t-ni{background:rgba(170,0,255,0.1);}
+.t-label{font-family:'Rajdhani',sans-serif;font-size:0.9rem;font-weight:700;letter-spacing:1px;}
+.t-time{font-family:'JetBrains Mono',monospace;font-size:1.25rem;font-weight:500;}
+.t-status{font-size:0.72rem;margin-top:2px;}
+.t-cd{font-family:'JetBrains Mono',monospace;font-size:0.74rem;color:var(--muted);}
+.bio-grid{display:grid;grid-template-columns:1fr 1fr;gap:17px;}
+@media(max-width:700px){.bio-grid{grid-template-columns:1fr;}}
+.fp-box{background:var(--surface);border:2px dashed var(--border);border-radius:14px;padding:22px;display:flex;flex-direction:column;align-items:center;gap:13px;transition:all 0.3s;}
+.fp-box.scanning{border-color:var(--accent);border-style:solid;box-shadow:0 0 25px rgba(0,229,255,0.12);}
+.fp-box.fp-ok{border-color:var(--green);border-style:solid;}
+.fp-wrap{position:relative;width:88px;height:88px;}
+.fp-icon{width:88px;height:88px;border-radius:50%;background:var(--card);border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:2.4rem;transition:all 0.4s;}
+.fp-icon.sa{border-color:var(--accent);animation:fpP 1.2s infinite;}
+.fp-icon.so{border-color:var(--green);background:rgba(0,230,118,0.08);}
+@keyframes fpP{0%{box-shadow:0 0 0 0 rgba(0,229,255,0.5)}70%{box-shadow:0 0 0 14px rgba(0,229,255,0)}100%{box-shadow:0 0 0 0 rgba(0,229,255,0)}}
+.scan-ln{position:absolute;left:0;right:0;height:3px;background:linear-gradient(90deg,transparent,var(--accent),transparent);top:0;border-radius:2px;animation:slM 1.5s linear infinite;display:none;}
+.scanning .scan-ln{display:block;}
+@keyframes slM{0%{top:0;opacity:0}10%{opacity:1}90%{opacity:1}100%{top:84px;opacity:0}}
+.fp-stat{font-size:0.8rem;font-weight:600;padding:6px 15px;border-radius:20px;border:1px solid;text-align:center;}
+.fs-idle{background:rgba(84,110,122,0.1);color:var(--muted);border-color:var(--muted2);}
+.fs-scan{background:rgba(0,229,255,0.1);color:var(--accent);border-color:rgba(0,229,255,0.3);}
+.fs-ok{background:rgba(0,230,118,0.1);color:var(--green);border-color:rgba(0,230,118,0.3);}
+.fg{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.fg3{grid-template-columns:repeat(3,1fr);}
+@media(max-width:680px){.fg,.fg3{grid-template-columns:1fr;}}
+.full{grid-column:1/-1;}
+label{display:block;font-size:0.73rem;color:var(--muted);margin-bottom:5px;font-weight:600;letter-spacing:0.8px;text-transform:uppercase;}
+input,select,textarea{width:100%;background:var(--surface);border:1px solid var(--border);border-radius:9px;padding:10px 13px;color:var(--text);font-family:'Space Grotesk',sans-serif;font-size:0.87rem;outline:none;transition:all 0.2s;}
+input:focus,select:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(0,229,255,0.1);}
+textarea{resize:vertical;min-height:72px;}
+select option{background:var(--surface);}
+.fa{display:flex;gap:9px;margin-top:15px;flex-wrap:wrap;}
+.btn{padding:10px 20px;border-radius:9px;border:none;font-family:'Space Grotesk',sans-serif;font-size:0.85rem;font-weight:600;cursor:pointer;transition:all 0.2s;display:inline-flex;align-items:center;gap:7px;white-space:nowrap;}
+.bp{background:var(--accent);color:#000;}.bp:hover{background:#33ecff;box-shadow:0 4px 18px rgba(0,229,255,0.4);transform:translateY(-1px);}
+.bs{background:var(--green);color:#000;}.bs:hover{background:#33eb8a;}
+.bd{background:var(--red);color:#fff;}.bd:hover{background:#ff4569;}
+.bo{background:transparent;color:var(--accent);border:1.5px solid var(--accent);}.bo:hover{background:rgba(0,229,255,0.1);}
+.bg2{background:var(--card2);color:var(--text);border:1px solid var(--border);}.bg2:hover{background:var(--border);}
+.bsm{padding:6px 12px;font-size:0.76rem;border-radius:8px;}
+.badge{display:inline-flex;align-items:center;gap:3px;padding:3px 9px;border-radius:20px;font-size:0.7rem;font-weight:700;border:1px solid;}
+.bpresent{background:rgba(0,230,118,0.1);color:var(--green);border-color:rgba(0,230,118,0.25);}
+.babsent{background:rgba(255,23,68,0.1);color:var(--red);border-color:rgba(255,23,68,0.25);}
+.bleave{background:rgba(255,171,0,0.1);color:var(--yellow);border-color:rgba(255,171,0,0.25);}
+.blate{background:rgba(240,98,146,0.1);color:var(--pink);border-color:rgba(240,98,146,0.25);}
+.bpend{background:rgba(255,171,0,0.1);color:var(--yellow);border-color:rgba(255,171,0,0.25);}
+.bapprv{background:rgba(0,230,118,0.1);color:var(--green);border-color:rgba(0,230,118,0.25);}
+.brej{background:rgba(255,23,68,0.1);color:var(--red);border-color:rgba(255,23,68,0.25);}
+.tw{overflow-x:auto;border-radius:11px;border:1px solid var(--border);}
+table{width:100%;border-collapse:collapse;}
+thead{background:var(--surface);}
+th{padding:10px 13px;text-align:left;font-size:0.69rem;color:var(--muted);font-weight:700;letter-spacing:1.5px;text-transform:uppercase;white-space:nowrap;}
+td{padding:11px 13px;font-size:0.83rem;border-top:1px solid var(--border);vertical-align:middle;}
+tr:hover td{background:rgba(0,229,255,0.02);}
+.av{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--purple));display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.75rem;color:#000;flex-shrink:0;}
+.alert-d{background:rgba(255,23,68,0.07);border-left:4px solid var(--red);border-radius:12px;padding:13px 17px;display:flex;align-items:center;gap:12px;margin-bottom:15px;}
+#toast-area{position:fixed;top:72px;right:18px;z-index:999;display:flex;flex-direction:column;gap:9px;max-width:360px;}
+.toast{background:var(--card2);border:1px solid var(--border);border-radius:11px;padding:12px 14px;box-shadow:0 8px 28px rgba(0,0,0,0.5);animation:tIn 0.3s ease;display:flex;gap:10px;align-items:flex-start;}
+@keyframes tIn{from{opacity:0;transform:translateX(40px)}to{opacity:1;transform:translateX(0)}}
+.t-ic{font-size:1.05rem;flex-shrink:0;margin-top:1px;}
+.t-ti{font-weight:700;font-size:0.82rem;margin-bottom:2px;}
+.t-bd{font-size:0.76rem;color:var(--muted);line-height:1.4;}
+.t-cl{margin-left:auto;background:none;border:none;color:var(--muted);cursor:pointer;font-size:0.92rem;padding:0;flex-shrink:0;}
+.mo{display:none;position:fixed;inset:0;z-index:300;background:rgba(0,0,0,0.78);backdrop-filter:blur(6px);align-items:center;justify-content:center;padding:18px;}
+.mo.open{display:flex;}
+.mod{background:var(--card);border:1px solid var(--border);border-radius:17px;padding:26px;max-width:540px;width:100%;animation:mIn 0.3s ease;}
+@keyframes mIn{from{opacity:0;transform:scale(0.9)}to{opacity:1;transform:scale(1)}}
+.mod-title{font-family:'Rajdhani',sans-serif;font-size:1.25rem;font-weight:700;margin-bottom:13px;}
+.ecfg-box{background:linear-gradient(135deg,rgba(0,229,255,0.05),rgba(170,0,255,0.04));border:1px solid rgba(0,229,255,0.22);border-radius:16px;padding:22px;margin-bottom:18px;}
+.ecfg-title{font-family:'Rajdhani',sans-serif;font-size:1.05rem;font-weight:700;letter-spacing:1px;color:var(--accent);margin-bottom:13px;}
+.sn{display:inline-flex;align-items:center;justify-content:center;background:rgba(0,229,255,0.15);color:var(--accent);border:1px solid rgba(0,229,255,0.3);border-radius:50%;width:22px;height:22px;font-size:0.71rem;font-weight:700;flex-shrink:0;margin-right:4px;}
+.elog{display:flex;align-items:flex-start;gap:10px;padding:11px 13px;background:var(--surface);border:1px solid var(--border);border-radius:10px;margin-bottom:7px;font-size:0.79rem;}
+.elog-ok{background:rgba(0,229,255,0.04);border-color:rgba(0,229,255,0.18);}
+.elog-fail{background:rgba(255,23,68,0.04);border-color:rgba(255,23,68,0.18);}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:18px;}
+@media(max-width:800px){.two-col{grid-template-columns:1fr;}}
+.step-card{transition:all 0.3s;}.step-card.locked{opacity:0.42;pointer-events:none;}
+.slot-pill{padding:5px 13px;border-radius:20px;font-size:0.77rem;font-weight:700;}
+.sp-open{background:rgba(0,230,118,0.12);color:var(--green);border:1px solid rgba(0,230,118,0.25);}
+.sp-close{background:rgba(84,110,122,0.1);color:var(--muted);border:1px solid var(--muted2);}
+.sp-ev{background:rgba(0,229,255,0.1);color:var(--accent);border:1px solid rgba(0,229,255,0.2);}
+.sp-ni{background:rgba(170,0,255,0.1);color:#cc66ff;border:1px solid rgba(170,0,255,0.2);}
+code{font-family:'JetBrains Mono',monospace;background:var(--surface);border:1px solid var(--border);border-radius:5px;padding:1px 7px;font-size:0.8em;color:var(--accent);}
+.live-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--green);margin-right:5px;animation:ldot 1.5s infinite;}
+@keyframes ldot{0%,100%{opacity:1}50%{opacity:0.2}}
+hr{border:none;border-top:1px solid var(--border);margin:14px 0;}
+.flex{display:flex;}.aic{align-items:center;}.jb{justify-content:space-between;}
+.g2{gap:8px;}.mt3{margin-top:12px;}.mb3{margin-bottom:12px;}
+@keyframes fpFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+
+/* ═══ LOGIN SCREEN ═══ */
+#loginScreen{position:fixed;inset:0;z-index:1000;display:flex;align-items:center;justify-content:center;background:var(--bg);padding:20px;}
+#loginScreen::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 80% 60% at 50% 30%,rgba(0,229,255,0.07) 0%,transparent 70%),linear-gradient(rgba(0,229,255,0.02) 1px,transparent 1px) 0 0/32px 32px,linear-gradient(90deg,rgba(0,229,255,0.02) 1px,transparent 1px) 0 0/32px 32px;}
+.login-box{background:var(--card);border:1px solid var(--border);border-radius:24px;padding:40px 36px;width:100%;max-width:440px;position:relative;box-shadow:0 0 80px rgba(0,229,255,0.08),0 32px 80px rgba(0,0,0,0.5);}
+.login-box::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(0,229,255,0.4),transparent);border-radius:24px 24px 0 0;}
+.login-logo{width:56px;height:56px;border-radius:16px;background:linear-gradient(135deg,var(--accent),var(--purple));display:flex;align-items:center;justify-content:center;font-size:1.6rem;margin:0 auto 18px;box-shadow:0 0 30px rgba(0,229,255,0.35);}
+.login-title{font-family:'Rajdhani',sans-serif;font-size:1.6rem;font-weight:700;letter-spacing:2px;text-align:center;margin-bottom:4px;}
+.login-title span{color:var(--accent);}
+.login-sub{text-align:center;color:var(--muted);font-size:0.82rem;margin-bottom:28px;}
+.role-tabs{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:24px;}
+.role-tab{padding:14px 10px;border-radius:12px;border:2px solid var(--border);background:var(--surface);cursor:pointer;text-align:center;transition:all 0.25s;color:var(--muted);}
+.role-tab:hover{border-color:rgba(0,229,255,0.3);color:var(--text);}
+.role-tab.selected{border-color:var(--accent);background:rgba(0,229,255,0.08);color:var(--accent);}
+.role-tab .role-icon{font-size:1.8rem;margin-bottom:6px;display:block;}
+.role-tab .role-name{font-family:'Rajdhani',sans-serif;font-size:0.95rem;font-weight:700;letter-spacing:1px;}
+.role-tab .role-desc{font-size:0.72rem;color:var(--muted);margin-top:2px;}
+.login-field{margin-bottom:14px;}
+.login-field label{display:block;font-size:0.72rem;color:var(--muted);margin-bottom:6px;font-weight:600;letter-spacing:0.8px;text-transform:uppercase;}
+.login-field input{width:100%;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 15px;color:var(--text);font-family:'Space Grotesk',sans-serif;font-size:0.9rem;outline:none;transition:all 0.2s;}
+.login-field input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(0,229,255,0.12);}
+.login-hint{font-size:0.72rem;color:var(--muted);margin-top:5px;padding:7px 10px;background:rgba(0,229,255,0.04);border:1px solid rgba(0,229,255,0.1);border-radius:7px;line-height:1.6;}
+.login-btn{width:100%;padding:13px;border-radius:11px;border:none;background:var(--accent);color:#000;font-family:'Space Grotesk',sans-serif;font-size:0.95rem;font-weight:700;cursor:pointer;transition:all 0.2s;margin-top:6px;letter-spacing:0.5px;}
+.login-btn:hover{background:#33ecff;box-shadow:0 6px 24px rgba(0,229,255,0.4);transform:translateY(-1px);}
+.login-err{display:none;background:rgba(255,23,68,0.1);border:1px solid rgba(255,23,68,0.3);border-radius:9px;padding:10px 14px;font-size:0.8rem;color:var(--red);margin-bottom:14px;text-align:center;}
+.login-err.show{display:block;}
+.rit-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(170,0,255,0.12);border:1px solid rgba(170,0,255,0.25);border-radius:8px;padding:4px 10px;font-size:0.72rem;font-weight:600;color:#cc66ff;margin-bottom:16px;width:100%;justify-content:center;}
+
+/* ═══ STUDENT PORTAL ═══ */
+#studentPortal{display:none;}
+.student-hero{background:linear-gradient(135deg,rgba(0,229,255,0.08),rgba(170,0,255,0.06));border:1px solid rgba(0,229,255,0.2);border-radius:18px;padding:24px 28px;margin-bottom:20px;display:flex;align-items:center;gap:20px;flex-wrap:wrap;}
+.student-avatar-lg{width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--purple));display:flex;align-items:center;justify-content:center;font-weight:700;font-size:1.4rem;color:#000;flex-shrink:0;box-shadow:0 0 20px rgba(0,229,255,0.3);}
+.student-hero-info{flex:1;}
+.student-hero-name{font-family:'Rajdhani',sans-serif;font-size:1.5rem;font-weight:700;letter-spacing:1px;}
+.student-hero-meta{font-size:0.8rem;color:var(--muted);margin-top:4px;line-height:1.7;}
+.student-hero-badges{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;}
+.shb{display:inline-flex;align-items:center;gap:5px;padding:4px 11px;border-radius:20px;font-size:0.72rem;font-weight:600;border:1px solid;}
+.shb-room{background:rgba(0,229,255,0.1);color:var(--accent);border-color:rgba(0,229,255,0.25);}
+.shb-dept{background:rgba(170,0,255,0.1);color:#cc66ff;border-color:rgba(170,0,255,0.25);}
+.shb-roll{background:rgba(255,171,0,0.1);color:var(--yellow);border-color:rgba(255,171,0,0.25);}
+.st-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:18px;}
+.st-stat{background:var(--card2);border:1px solid var(--border);border-radius:13px;padding:16px;text-align:center;position:relative;overflow:hidden;}
+.st-stat::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;background:currentColor;opacity:0.22;}
+.st-stat-num{font-family:'Rajdhani',sans-serif;font-size:2rem;font-weight:700;line-height:1;}
+.st-stat-lbl{font-size:0.71rem;color:var(--muted);margin-top:5px;font-weight:500;}
+.leave-card-item{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:10px;}
+.leave-card-item:last-child{margin-bottom:0;}
+.lcstatus{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:0.7rem;font-weight:700;border:1px solid;}
+.lcs-pending{background:rgba(255,171,0,0.1);color:var(--yellow);border-color:rgba(255,171,0,0.3);}
+.lcs-approved{background:rgba(0,230,118,0.1);color:var(--green);border-color:rgba(0,230,118,0.3);}
+.lcs-rejected{background:rgba(255,23,68,0.1);color:var(--red);border-color:rgba(255,23,68,0.3);}
+.att-day-row{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:9px;background:var(--surface);border:1px solid var(--border);margin-bottom:6px;font-size:0.8rem;}
+.stu-nav{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:20px;}
+.stu-tab{padding:8px 18px;border-radius:9px;border:none;background:var(--card2);color:var(--muted);font-family:'Space Grotesk',sans-serif;font-size:0.82rem;font-weight:500;cursor:pointer;transition:all 0.2s;border:1px solid var(--border);}
+.stu-tab:hover{color:var(--text);background:var(--border);}
+.stu-tab.active{background:var(--accent);color:#000;font-weight:700;border-color:var(--accent);}
+.stu-page{display:none;animation:fadeUp 0.3s ease;}
+.stu-page.active{display:block;}
+.progress-bar-wrap{background:var(--border);border-radius:20px;height:8px;overflow:hidden;margin-top:6px;}
+.progress-bar{height:100%;border-radius:20px;transition:width 0.8s ease;}
+</style>
+</head>
+<body>
+<div id="toast-area"></div>
+
+<!-- ═══════════════════════════════ LOGIN SCREEN ═══════════════════════════════ -->
+<div id="loginScreen">
+  <div class="login-box">
+    <div class="login-logo">🛡️</div>
+    <div class="login-title">HOSTEL<span>GUARD</span> PRO</div>
+    <div class="login-sub">RIT Hostel Management System</div>
+
+    <!-- Role tabs -->
+    <div class="role-tabs">
+      <div class="role-tab selected" id="roleTeacher" onclick="selectRole('teacher')">
+        <span class="role-icon">👩‍🏫</span>
+        <div class="role-name">TEACHER</div>
+        <div class="role-desc">Warden / Advisor / Admin</div>
+      </div>
+      <div class="role-tab" id="roleStudent" onclick="selectRole('student')">
+        <span class="role-icon">🎓</span>
+        <div class="role-name">STUDENT</div>
+        <div class="role-desc">View your hostel status</div>
+      </div>
+    </div>
+
+    <div class="rit-badge" id="ritBadge">🏫 RIT — Ramco Institute of Technology</div>
+    <div class="login-err" id="loginErr">❌ Invalid credentials. Please try again.</div>
+
+    <div class="login-field">
+      <label id="unLabel">RIT Username</label>
+      <input id="loginUser" placeholder="Enter your RIT username" autocomplete="off" onkeydown="if(event.key==='Enter')doLogin()">
+      <div class="login-hint" id="loginHint">
+        👩‍🏫 <strong>Teacher:</strong> Enter your RIT username &nbsp;|&nbsp; Password: <code style="background:rgba(0,229,255,0.1);padding:1px 6px;border-radius:4px;color:var(--accent)">rit@teacher</code>
+      </div>
+    </div>
+
+    <div class="login-field">
+      <label>Password</label>
+      <input id="loginPass" type="password" placeholder="Enter password" onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+
+    <button class="login-btn" onclick="doLogin()">🔐 Login</button>
+  </div>
+</div>
+<nav>
+  <div class="nav-brand">
+    <div class="nav-logo">🛡️</div>
+    <div class="nav-title">HOSTEL<span>GUARD</span> PRO</div>
+  </div>
+  <div class="nav-tabs">
+    <button class="nav-tab active" onclick="showPage('dashboard',this)">📊 Dashboard</button>
+    <button class="nav-tab" onclick="showPage('attendance',this)">🔐 Attendance</button>
+    <button class="nav-tab" onclick="showPage('leave',this)">📋 Leave</button>
+    <button class="nav-tab" onclick="showPage('students',this)">👥 Students</button>
+    <button class="nav-tab" onclick="showPage('admin',this)">🔑 Admin</button>
+  </div>
+  <div class="nav-right">
+    <div id="emailBadge" class="email-badge eb-demo" onclick="showPage('admin',document.querySelectorAll('.nav-tab')[4])">📧 Email — Demo</div>
+    <div class="nav-clock" id="navClock">00:00:00</div>
+  </div>
+</nav>
+
+<!-- DASHBOARD -->
+<div class="page active" id="page-dashboard">
+  <div class="page-header">
+    <div class="chip">📊 Overview</div>
+    <div class="page-title">Dashboard</div>
+    <div class="page-sub"><span class="live-dot"></span>Real-time hostel monitoring</div>
+  </div>
+  <div id="alertBanner"></div>
+  <div class="stats-grid">
+    <div class="stat-card" style="color:var(--accent)"><div class="stat-num" id="s-total">0</div><div class="stat-lbl">Total Students</div></div>
+    <div class="stat-card" style="color:var(--green)"><div class="stat-num" id="s-present">0</div><div class="stat-lbl">Present</div></div>
+    <div class="stat-card" style="color:var(--pink)"><div class="stat-num" id="s-late">0</div><div class="stat-lbl">Late Entry</div></div>
+    <div class="stat-card" style="color:var(--red)"><div class="stat-num" id="s-absent">0</div><div class="stat-lbl">No Attendance</div></div>
+    <div class="stat-card" style="color:var(--yellow)"><div class="stat-num" id="s-leave">0</div><div class="stat-lbl">On Leave</div></div>
+    <div class="stat-card" style="color:var(--purple)"><div class="stat-num" id="s-pending">0</div><div class="stat-lbl">Pending Leaves</div></div>
+  </div>
+  <div class="card">
+    <div class="card-title">⏰ Attendance Schedule</div>
+    <div class="timer-grid">
+      <div class="timer-box" id="timerEv"><div class="t-icon t-ev">🌆</div><div><div class="t-label">EVENING ATTENDANCE</div><div class="t-time" style="color:var(--accent)">7:00 PM</div><div class="t-status" id="evStat">—</div><div class="t-cd" id="evCd">—</div></div></div>
+      <div class="timer-box" id="timerNi"><div class="t-icon t-ni">🌙</div><div><div class="t-label">NIGHT ATTENDANCE</div><div class="t-time" style="color:#cc66ff">9:00 PM</div><div class="t-status" id="niStat">—</div><div class="t-cd" id="niCd">—</div></div></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">📍 Today's Student Status</div>
+    <div class="tw"><table><thead><tr><th>Student</th><th>Roll</th><th>Room</th><th>Evening 7PM</th><th>Night 9PM</th><th>Status</th></tr></thead><tbody id="dashTable"></tbody></table></div>
+  </div>
+  <div class="card">
+    <div class="card-title">📧 Recent Emails Sent</div>
+    <div id="emailFeed" style="max-height:280px;overflow-y:auto;"><div style="text-align:center;color:var(--muted);padding:18px;font-size:0.81rem">No emails sent yet</div></div>
+  </div>
+</div>
+
+<!-- ATTENDANCE -->
+<div class="page" id="page-attendance">
+  <div class="page-header">
+    <div class="chip">🔐 Biometric</div>
+    <div class="page-title">Fingerprint Attendance</div>
+    <div class="page-sub">Students mark attendance via fingerprint — local device or paired phone</div>
+  </div>
+  <div class="card">
+    <div class="card-title">⏰ Current Slot</div>
+    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:13px">
+      <div id="slotPill" class="slot-pill sp-close">No Active Slot</div>
+      <div id="slotLeft" style="font-family:'JetBrains Mono',monospace;font-size:0.79rem;color:var(--muted)"></div>
+    </div>
+    <div style="font-size:0.79rem;color:var(--muted);line-height:1.8">
+      📌 Evening: <strong style="color:var(--text)">7:00 PM – 7:30 PM</strong> &nbsp;|&nbsp; 📌 Night: <strong style="color:var(--text)">9:00 PM – 9:30 PM</strong><br>
+      After window → <span class="badge blate">⏰ Late Entry</span> · Auto email to Warden &nbsp;|&nbsp; No mark → <span class="badge babsent">❌ No Attendance</span>
+    </div>
+  </div>
+  <div class="bio-grid">
+    <div class="card">
+      <div class="card-title">🖐 Local Fingerprint Scan</div>
+      <div class="fp-box" id="fpBox">
+        <div style="font-size:0.77rem;color:var(--muted);text-align:center">Select student → tap Scan</div>
+        <div style="width:100%"><label>Select Student</label><select id="attStudent" onchange="document.getElementById('fpBtn').disabled=!this.value"><option value="">-- Select Student --</option></select></div>
+        <div class="fp-wrap"><div class="fp-icon" id="fpIcon">🖐</div><div class="scan-ln"></div></div>
+        <div class="fp-stat fs-idle" id="fpStatus">👆 Ready to Scan</div>
+        <button class="btn bp" id="fpBtn" onclick="doFpScan()" disabled>🔐 Start Fingerprint Scan</button>
+        <div style="font-size:0.73rem;color:var(--muted);text-align:center;line-height:1.5;background:rgba(0,229,255,0.04);border:1px solid rgba(0,229,255,0.1);border-radius:8px;padding:8px 10px">💡 In production: connect a USB/Bluetooth fingerprint reader SDK here.</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">📱 Mark via Another Phone</div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:17px;display:flex;flex-direction:column;gap:12px">
+        <div style="font-size:0.79rem;color:var(--muted);line-height:1.6">Open this receiver on the student's phone — they select name and verify fingerprint.</div>
+        <button class="btn bo" onclick="openPhoneModal()">📲 Open Phone Receiver</button>
+        <hr>
+        <div style="font-size:0.77rem;font-weight:700;color:var(--muted);letter-spacing:1px;text-transform:uppercase">Quick Manual Entry</div>
+        <div class="fg"><div><label>Student</label><select id="manAttStud"><option value="">-- Select --</option></select></div><div><label>Slot</label><select id="manAttSlot"><option value="evening">Evening 7PM</option><option value="night">Night 9PM</option></select></div></div>
+        <button class="btn bs" onclick="doManualAtt()">✅ Mark Present</button>
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="flex aic jb mb3" style="flex-wrap:wrap;gap:8px">
+      <div class="card-title" style="margin:0">📋 Today's Attendance Log</div>
+      <div style="display:flex;gap:7px;flex-wrap:wrap">
+        <button class="btn bsm bg2" onclick="fAtt('all')">All</button>
+        <button class="btn bsm bg2" onclick="fAtt('present')">✅ Present</button>
+        <button class="btn bsm bg2" onclick="fAtt('late')">⏰ Late</button>
+        <button class="btn bsm bg2" onclick="fAtt('absent')">❌ Absent</button>
+      </div>
+    </div>
+    <div class="tw"><table><thead><tr><th>Student</th><th>Roll</th><th>Room</th><th>Evening</th><th>Ev.Time</th><th>Night</th><th>Ni.Time</th><th>Status</th></tr></thead><tbody id="attTable"></tbody></table></div>
+  </div>
+</div>
+
+<!-- LEAVE -->
+<div class="page" id="page-leave">
+  <div class="page-header">
+    <div class="chip">📋 Leave</div>
+    <div class="page-title">Leave Application</div>
+    <div class="page-sub">Submit leave — real email sent to Deputy Warden, Warden &amp; Class Advisor</div>
+  </div>
+  <div class="two-col">
+    <div>
+      <div class="card step-card" id="lv1">
+        <div class="card-title">Step 1 — Select Student</div>
+        <div><label>Student Name *</label><select id="leaveStud" onchange="onLeaveSelect()"><option value="">-- Select Student --</option></select></div>
+        <div id="lvStudInfo" style="display:none;margin-top:12px;padding:12px;background:var(--surface);border:1px solid var(--border);border-radius:10px;font-size:0.79rem;line-height:1.9;"></div>
+      </div>
+      <div class="card step-card locked" id="lv2">
+        <div class="card-title">Step 2 — Leave Details</div>
+        <div class="fg">
+          <div><label>Leave Type *</label><select id="lvType"><option>Home Visit</option><option>Medical</option><option>Family Emergency</option><option>Personal</option><option>Other</option></select></div>
+          <div><label>Destination *</label><input id="lvDest" placeholder="e.g. Home – Chennai"></div>
+          <div><label>From Date *</label><input id="lvFrom" type="date"></div>
+          <div><label>To Date *</label><input id="lvTo" type="date"></div>
+          <div><label>Transport</label><select id="lvTransport"><option>Bus</option><option>Train</option><option>Car</option><option>Two-wheeler</option><option>Other</option></select></div>
+          <div><label>Parent Phone (confirm)</label><input id="lvParPhone" type="tel" placeholder="Parent phone"></div>
+          <div class="full"><label>Reason *</label><textarea id="lvReason" placeholder="Reason for leave..."></textarea></div>
+        </div>
+        <div class="fa">
+          <button class="btn bp" onclick="submitLeave()">📤 Submit &amp; Send Email</button>
+          <button class="btn bg2" onclick="resetLeave()">🔄 Reset</button>
+        </div>
+        <div style="margin-top:12px;padding:10px 14px;background:rgba(0,229,255,0.04);border:1px solid rgba(0,229,255,0.15);border-radius:10px;font-size:0.77rem;color:var(--muted);line-height:1.7">
+          📧 On submit, email sent to: <strong style="color:var(--accent)">Deputy Warden · Warden · Class Advisor</strong>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">📜 Leave History</div>
+      <div id="lvHistory" style="max-height:700px;overflow-y:auto"><div style="text-align:center;color:var(--muted);padding:28px;font-size:0.82rem">No applications yet</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- STUDENTS -->
+<div class="page" id="page-students">
+  <div class="page-header">
+    <div class="chip">👥 Registry</div>
+    <div class="page-title">Student Management</div>
+    <div class="page-sub">Up to 70 hostel students — enter details manually</div>
+  </div>
+  <div class="card">
+    <div class="card-title">➕ Add New Student</div>
+    <div class="fg fg3">
+      <div><label>Full Name *</label><input id="sName" placeholder="e.g. Kaviya S"></div>
+      <div><label>Roll Number *</label><input id="sRoll" placeholder="e.g. 23CS001"></div>
+      <div><label>Room Number</label><input id="sRoom" placeholder="e.g. B-204"></div>
+      <div><label>Department</label><input id="sDept" placeholder="e.g. Computer Science"></div>
+      <div><label>Year</label><select id="sYear"><option>I Year</option><option>II Year</option><option>III Year</option><option>IV Year</option></select></div>
+      <div><label>Student Phone</label><input id="sStudPhone" type="tel" placeholder="Student mobile"></div>
+      <div><label>Parent Name</label><input id="sParent" placeholder="Parent name"></div>
+      <div><label>Parent Phone</label><input id="sParPhone" type="tel" placeholder="10-digit mobile"></div>
+      <div><label>Parent Email *</label><input id="sParEmail" type="email" placeholder="parent@email.com"></div>
+      <div><label>Class Advisor Name</label><input id="sAdv" placeholder="e.g. Dr. Priya M"></div>
+      <div><label>Advisor Phone</label><input id="sAdvPhone" type="tel" placeholder="Advisor mobile"></div>
+      <div><label>Advisor Email *</label><input id="sAdvEmail" type="email" placeholder="advisor@college.edu"></div>
+    </div>
+    <div class="fa"><button class="btn bp" onclick="addStudent()">➕ Add Student</button><button class="btn bg2" onclick="clearStudForm()">Clear</button></div>
+    <div style="margin-top:10px;font-size:0.75rem;color:var(--muted)">Capacity: <code id="capBar">0 / 70</code></div>
+  </div>
+  <div class="card">
+    <div class="flex aic jb mb3" style="flex-wrap:wrap;gap:8px">
+      <div class="card-title" style="margin:0">👥 Registered Students</div>
+      <input id="studSearch" placeholder="🔍 Search name / roll / room..." style="width:220px;padding:8px 12px;font-size:0.82rem" oninput="renderStudents()">
+    </div>
+    <div class="tw"><table><thead><tr><th>#</th><th>Name</th><th>Roll</th><th>Room</th><th>Dept/Year</th><th>Parent</th><th>Advisor</th><th>Del</th></tr></thead><tbody id="studTable"></tbody></table></div>
+  </div>
+</div>
+
+<!-- ADMIN -->
+<div class="page" id="page-admin">
+  <div class="page-header">
+    <div class="chip">🔑 Admin</div>
+    <div class="page-title">Admin Panel</div>
+    <div class="page-sub">Configure EmailJS · Approve/Reject leaves · Send manual emails</div>
+  </div>
+  <div class="ecfg-box">
+    <div class="ecfg-title">📧 Email Configuration — EmailJS (Free · No Server Needed)</div>
+    <div style="font-size:0.79rem;color:var(--muted);margin-bottom:15px;line-height:2">
+      <div><span class="sn">1</span> Go to <a href="https://www.emailjs.com" target="_blank" style="color:var(--accent);font-weight:600">emailjs.com</a> → Sign up free → <strong style="color:var(--green)">200 emails/month free</strong></div>
+      <div><span class="sn">2</span> <strong style="color:var(--text)">Email Services</strong> → Add New Service → Connect your Gmail / Outlook</div>
+      <div><span class="sn">3</span> <strong style="color:var(--text)">Email Templates</strong> → Create New → use variables: <code>{{to_name}}</code> <code>{{to_email}}</code> <code>{{subject}}</code> <code>{{message}}</code> <code>{{from_name}}</code></div>
+      <div><span class="sn">4</span> Copy <strong style="color:var(--accent)">Service ID · Template ID · Public Key</strong> from your dashboard → paste below → Save</div>
+    </div>
+    <div class="fg fg3">
+      <div><label>Service ID</label><input id="ejServiceId" placeholder="service_xxxxxxx" autocomplete="off"></div>
+      <div><label>Template ID</label><input id="ejTemplateId" placeholder="template_xxxxxxx" autocomplete="off"></div>
+      <div><label>Public Key</label><input id="ejPublicKey" type="password" placeholder="Your EmailJS public key" autocomplete="off"></div>
+    </div>
+    <div class="fg" style="margin-top:12px">
+      <div><label>Email Mode</label><select id="emailMode"><option value="demo">📝 Demo Mode — log only, no real email</option><option value="real">📧 Real Email via EmailJS</option></select></div>
+      <div><label>Test Email (to verify)</label><input id="testEmailAddr" type="email" placeholder="your@email.com"></div>
+    </div>
+    <div class="fa" style="margin-top:14px">
+      <button class="btn bp" onclick="saveEmailConfig()">💾 Save &amp; Activate</button>
+      <button class="btn bo" id="testEmailBtn" style="display:none" onclick="sendTestEmail()">🧪 Send Test Email</button>
+    </div>
+    <div id="cfgMsg" style="display:none;margin-top:11px;padding:9px 13px;border-radius:9px;font-size:0.78rem;"></div>
+  </div>
+  <div class="card">
+    <div class="card-title">📞 Authority Email Contacts</div>
+    <div class="fg">
+      <div><label>Deputy Warden Name</label><input id="depName" value="Dr. S. Vijayalakshmi"></div>
+      <div><label>Deputy Warden Email *</label><input id="depEmail" type="email" placeholder="depwarden@college.edu"></div>
+      <div><label>Warden Name</label><input id="warName" value="Prof. R. Meenakshi"></div>
+      <div><label>Warden Email *</label><input id="warEmail" type="email" placeholder="warden@college.edu"></div>
+    </div>
+    <div class="fa"><button class="btn bp" onclick="saveAuthority()">💾 Save Contacts</button></div>
+  </div>
+  <div class="card">
+    <div class="card-title">⏳ Pending Leave Requests</div>
+    <div id="pendingLeaves"><div style="text-align:center;color:var(--muted);padding:20px;font-size:0.82rem">✅ No pending requests</div></div>
+  </div>
+  <div class="card">
+    <div class="card-title">📣 Send Manual Email</div>
+    <div class="fg">
+      <div><label>Send To</label><select id="notifTarget"><option value="all">All Authorities</option><option value="warden">Warden Only</option><option value="deputy">Deputy Warden Only</option><option value="adviser">Class Advisor Only</option><option value="parent">Parent Only</option></select></div>
+      <div><label>Student (optional)</label><select id="notifStud"><option value="">-- All --</option></select></div>
+      <div><label>Subject</label><input id="notifSubject" placeholder="e.g. Urgent: Student Absent Alert"></div>
+      <div class="full"><label>Message *</label><textarea id="notifMsg" placeholder="Type the email message here..."></textarea></div>
+    </div>
+    <div class="fa"><button class="btn bp" onclick="sendManualEmail()">📨 Send Email Now</button></div>
+  </div>
+  <div class="card">
+    <div class="card-title">📋 Email Delivery Log</div>
+    <div class="tw"><table><thead><tr><th>Time</th><th>Student</th><th>Recipient</th><th>Email Address</th><th>Subject</th><th>Status</th></tr></thead><tbody id="emailLogTable"></tbody></table></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════ STUDENT PORTAL ═══════════════════════════════ -->
+<div id="studentPortal">
+  <!-- Student nav bar -->
+  <nav style="display:none" id="stuNav">
+    <div class="nav-brand">
+      <div class="nav-logo">🛡️</div>
+      <div class="nav-title">HOSTEL<span>GUARD</span></div>
+    </div>
+    <div class="stu-nav" style="margin:0">
+      <button class="stu-tab active" onclick="showStuPage('dashboard',this)">📊 My Dashboard</button>
+      <button class="stu-tab" onclick="showStuPage('attendance',this)">🗓️ Attendance</button>
+      <button class="stu-tab" onclick="showStuPage('leave',this)">📋 Leave Apply</button>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px">
+      <div id="stuNavName" style="font-size:0.8rem;color:var(--muted)"></div>
+      <button class="btn bg2 bsm" onclick="doLogout()">🚪 Logout</button>
+    </div>
+  </nav>
+
+  <div style="padding:24px;max-width:1100px;margin:0 auto">
+
+    <!-- ── STUDENT DASHBOARD ── -->
+    <div class="stu-page active" id="stu-page-dashboard">
+      <div class="student-hero" id="stuHero"></div>
+
+      <!-- Stats row -->
+      <div class="st-stats" id="stuStats"></div>
+
+      <!-- Attendance summary chart -->
+      <div class="card">
+        <div class="card-title">📊 Attendance Summary</div>
+        <div id="stuAttSummary"></div>
+      </div>
+
+      <!-- Recent leave status -->
+      <div class="card">
+        <div class="card-title">📋 Recent Leave Requests</div>
+        <div id="stuRecentLeaves">
+          <div style="text-align:center;color:var(--muted);padding:20px;font-size:0.83rem">No leave applications yet</div>
+        </div>
+      </div>
+
+      <!-- Today's status -->
+      <div class="card">
+        <div class="card-title">📍 Today's Attendance Status</div>
+        <div id="stuTodayAtt"></div>
+      </div>
+    </div>
+
+    <!-- ── STUDENT ATTENDANCE ── -->
+    <div class="stu-page" id="stu-page-attendance">
+      <div class="page-header">
+        <div class="chip">🗓️ Attendance</div>
+        <div class="page-title">My Attendance</div>
+        <div class="page-sub">Your complete attendance record — daily slots, late entries, absences</div>
+      </div>
+
+      <!-- Today -->
+      <div class="card">
+        <div class="card-title">📍 Today's Attendance</div>
+        <div id="stuAttToday2"></div>
+      </div>
+
+      <!-- Attendance stats -->
+      <div class="card">
+        <div class="card-title">📊 Overall Attendance Statistics</div>
+        <div id="stuAttStats"></div>
+      </div>
+
+      <!-- Full log -->
+      <div class="card">
+        <div class="card-title">📋 Full Attendance Log</div>
+        <div id="stuAttFullLog">
+          <div style="text-align:center;color:var(--muted);padding:20px;font-size:0.83rem">Attendance will appear here as records are marked.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── STUDENT LEAVE APPLY ── -->
+    <div class="stu-page" id="stu-page-leave">
+      <div class="page-header">
+        <div class="chip">📋 Leave</div>
+        <div class="page-title">Apply for Leave</div>
+        <div class="page-sub">Submit your leave request — your Class Advisor, Warden and Deputy Warden will be notified via email</div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px" id="stuLeaveGrid">
+
+        <!-- Apply form -->
+        <div class="card">
+          <div class="card-title">📝 New Leave Application</div>
+          <div style="margin-bottom:12px">
+            <label style="display:block;font-size:0.73rem;color:var(--muted);margin-bottom:5px;font-weight:600;letter-spacing:0.8px;text-transform:uppercase">Leave Type *</label>
+            <select id="stuLvType" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:9px;padding:10px 13px;color:var(--text);font-family:'Space Grotesk',sans-serif;font-size:0.87rem;outline:none;">
+              <option>Home Visit</option><option>Medical</option><option>Family Emergency</option><option>Personal</option><option>Other</option>
+            </select>
+          </div>
+          <div style="margin-bottom:12px">
+            <label style="display:block;font-size:0.73rem;color:var(--muted);margin-bottom:5px;font-weight:600;letter-spacing:0.8px;text-transform:uppercase">Destination *</label>
+            <input id="stuLvDest" placeholder="e.g. Home – Chennai" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:9px;padding:10px 13px;color:var(--text);font-family:'Space Grotesk',sans-serif;font-size:0.87rem;outline:none;">
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+            <div>
+              <label style="display:block;font-size:0.73rem;color:var(--muted);margin-bottom:5px;font-weight:600;letter-spacing:0.8px;text-transform:uppercase">From Date *</label>
+              <input id="stuLvFrom" type="date" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:9px;padding:10px 13px;color:var(--text);font-family:'Space Grotesk',sans-serif;font-size:0.87rem;outline:none;">
+            </div>
+            <div>
+              <label style="display:block;font-size:0.73rem;color:var(--muted);margin-bottom:5px;font-weight:600;letter-spacing:0.8px;text-transform:uppercase">To Date *</label>
+              <input id="stuLvTo" type="date" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:9px;padding:10px 13px;color:var(--text);font-family:'Space Grotesk',sans-serif;font-size:0.87rem;outline:none;">
+            </div>
+          </div>
+          <div style="margin-bottom:12px">
+            <label style="display:block;font-size:0.73rem;color:var(--muted);margin-bottom:5px;font-weight:600;letter-spacing:0.8px;text-transform:uppercase">Transport</label>
+            <select id="stuLvTransport" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:9px;padding:10px 13px;color:var(--text);font-family:'Space Grotesk',sans-serif;font-size:0.87rem;outline:none;">
+              <option>Bus</option><option>Train</option><option>Car</option><option>Two-wheeler</option><option>Other</option>
+            </select>
+          </div>
+          <div style="margin-bottom:16px">
+            <label style="display:block;font-size:0.73rem;color:var(--muted);margin-bottom:5px;font-weight:600;letter-spacing:0.8px;text-transform:uppercase">Reason *</label>
+            <textarea id="stuLvReason" placeholder="Describe your reason for leave..." style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:9px;padding:10px 13px;color:var(--text);font-family:'Space Grotesk',sans-serif;font-size:0.87rem;outline:none;resize:vertical;min-height:80px;"></textarea>
+          </div>
+          <button class="btn bp" style="width:100%" onclick="stuSubmitLeave()">📤 Submit Leave Application</button>
+          <div style="margin-top:11px;padding:9px 13px;background:rgba(0,229,255,0.04);border:1px solid rgba(0,229,255,0.15);border-radius:9px;font-size:0.76rem;color:var(--muted);line-height:1.7">
+            📧 On submit, email sent to: <strong style="color:var(--accent)">Deputy Warden · Warden · Class Advisor</strong>
+          </div>
+        </div>
+
+        <!-- My leaves history -->
+        <div class="card">
+          <div class="card-title">📜 My Leave History</div>
+          <div id="stuLeaveHistory" style="max-height:600px;overflow-y:auto">
+            <div style="text-align:center;color:var(--muted);padding:24px;font-size:0.83rem">No leave applications yet</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- end student portal inner -->
+</div><!-- end studentPortal -->
+
+<!-- MODAL: Leave -->
+<div class="mo" id="lvModal">
+  <div class="mod">
+    <div class="mod-title" id="lvModalTitle">Leave Request</div>
+    <div id="lvModalBody" style="color:var(--muted);font-size:0.85rem;line-height:1.8;margin-bottom:17px;"></div>
+    <div class="fa">
+      <button class="btn bs" onclick="approveLeave()">✅ Approve &amp; Email All</button>
+      <button class="btn bd" onclick="rejectLeave()">❌ Reject &amp; Notify</button>
+      <button class="btn bg2" onclick="closeLvModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Phone biometric -->
+<div class="mo" id="phoneModal">
+  <div class="mod">
+    <div class="mod-title">📱 Phone Biometric Receiver</div>
+    <p style="color:var(--muted);font-size:0.81rem;margin-bottom:13px;line-height:1.6">Open this on the student's phone. They select their name and verify fingerprint.</p>
+    <div class="fg" style="margin-bottom:13px">
+      <div><label>Student</label><select id="pmStud"><option value="">-- Select --</option></select></div>
+      <div><label>Slot</label><select id="pmSlot"><option value="evening">Evening 7PM</option><option value="night">Night 9PM</option></select></div>
+    </div>
+    <div style="text-align:center;padding:18px;background:var(--surface);border-radius:12px;border:1px solid var(--border);margin-bottom:13px">
+      <div style="font-size:4.5rem;display:inline-block;animation:fpFloat 3s ease-in-out infinite">🖐</div>
+      <div style="font-size:0.8rem;color:var(--muted);margin-top:4px">Place finger on phone sensor</div>
+    </div>
+    <div class="fa"><button class="btn bs" onclick="doPhoneAtt()">✅ Fingerprint Verified</button><button class="btn bg2" onclick="closePhoneModal()">Close</button></div>
+  </div>
+</div>
+
+<script>
+// ═══ STATE ═══
+const MAX=70;
+const DEFAULT_STUDENTS=[
+  {id:1,name:"Kaviya S",roll:"22CS042",dept:"Computer Science",year:"II Year",room:"A-101",studPhone:"9876500100",parent:"Sundar S",parPhone:"9876543210",parEmail:"parent1@gmail.com",adv:"Dr. Priya M",advPhone:"9876500200",advEmail:"priya.m@college.edu"},
+  {id:2,name:"Prema Sri K",roll:"22CS055",dept:"Computer Science",year:"II Year",room:"A-102",studPhone:"9876500101",parent:"Krishnan K",parPhone:"9876500001",parEmail:"parent2@gmail.com",adv:"Dr. Priya M",advPhone:"9876500200",advEmail:"priya.m@college.edu"},
+  {id:3,name:"Raajagomathi M",roll:"22EC011",dept:"Electronics",year:"II Year",room:"B-204",studPhone:"9876500102",parent:"Murali M",parPhone:"9876500002",parEmail:"parent3@gmail.com",adv:"Dr. Kumar R",advPhone:"9876500201",advEmail:"kumar.r@college.edu"},
+];
+// ── Firebase-backed save/load ──
+async function saveStudents(){ if(window.fbSaveStudents) await window.fbSaveStudents(students); }
+async function saveNSid(){ if(window.fbSaveNSid) await window.fbSaveNSid(nSid); }
+async function saveLeaves(){ if(window.fbSaveLeaves) await window.fbSaveLeaves(leaveReqs); }
+async function saveAtt(){ if(window.fbSaveAtt) await window.fbSaveAtt(todayAtt); }
+
+let students=[...DEFAULT_STUDENTS];
+let nSid=4,nLid=1,nEid=1,curLvId=null;
+let leaveReqs=[],eLogs=[],todayAtt={};
+let selLvStud=null,attF='all';
+
+// ── Load all data from Firebase on startup ──
+async function fbInit(){
+  try{
+    const [fbStudents,fbNSid,fbLeaves,fbAtt] = await Promise.all([
+      window.fbLoadStudents(),
+      window.fbLoadNSid(),
+      window.fbLoadLeaves(),
+      window.fbLoadAtt()
+    ]);
+    if(fbStudents && fbStudents.length) students=fbStudents;
+    if(fbNSid) nSid=fbNSid;
+    if(fbLeaves && fbLeaves.length){ leaveReqs=fbLeaves; nLid=Math.max(...fbLeaves.map(l=>l.id||0))+1; }
+    if(fbAtt) todayAtt=fbAtt;
+    renderStudents(); renderDash(); renderLvHistory(); renderAdmin();
+    toast('🔥','Firebase Connected','Data loaded from cloud!','success');
+  }catch(e){ console.error('fbInit error:',e); }
+
+  // Real-time listeners
+  if(window.fbWatchStudents) window.fbWatchStudents(list=>{ students=list; renderStudents(); renderDash(); });
+  if(window.fbWatchLeaves)   window.fbWatchLeaves(list=>{ leaveReqs=list; renderLvHistory(); renderAdmin(); renderDash(); });
+  if(window.fbWatchAtt)      window.fbWatchAtt(data=>{ todayAtt=data; renderDash(); renderAttTable&&renderAttTable(); });
+}
+
+// Wait for Firebase ready then init
+if(window.fbReady){ fbInit(); }
+else{ window.addEventListener('fbReady', fbInit); }
+let auth={depName:"Dr. S. Vijayalakshmi",depEmail:"",warName:"Prof. R. Meenakshi",warEmail:""};
+let eCfg={svc:'',tpl:'',pub:'',mode:'demo'};
+const SLOTS={evening:{hour:19,min:0,win:30,label:"Evening 7PM"},night:{hour:21,min:0,win:30,label:"Night 9PM"}};
+
+// ═══ CLOCK ═══
+function tick(){const n=new Date();document.getElementById('navClock').textContent=n.toLocaleTimeString('en-IN',{hour12:false});updateSlots(n);}
+setInterval(tick,1000);tick();
+function ss(s,n){const c=n.getHours()*60+n.getMinutes(),st=s.hour*60+s.min,e=st+s.win,l=e+30;return c>=st&&c<=e?'open':c>e&&c<=l?'late':c>l?'closed':'upcoming';}
+function cd(s,n){const t=new Date(n);t.setHours(s.hour,s.min,0,0);const d=t-n;if(d<=0)return'';const h=Math.floor(d/3600000),m=Math.floor((d%3600000)/60000),sc=Math.floor((d%60000)/1000);return`Opens in ${h>0?h+'h ':''}${m}m ${sc}s`;}
+function stl(s){return s==='open'?'<span style="color:var(--green)">✅ OPEN NOW</span>':s==='late'?'<span style="color:var(--pink)">⚠️ Late Window</span>':s==='closed'?'<span style="color:var(--muted)">⛔ Closed</span>':'<span style="color:var(--yellow)">⏳ Upcoming</span>';}
+function updateSlots(n){
+  const ev=ss(SLOTS.evening,n),ni=ss(SLOTS.night,n);
+  document.getElementById('evStat').innerHTML=stl(ev);document.getElementById('niStat').innerHTML=stl(ni);
+  document.getElementById('evCd').textContent=cd(SLOTS.evening,n)||'—';document.getElementById('niCd').textContent=cd(SLOTS.night,n)||'—';
+  document.getElementById('timerEv').className='timer-box'+(ev==='open'?' open-slot':ev==='closed'?' closed-slot':'');
+  document.getElementById('timerNi').className='timer-box'+(ni==='open'?' open-slot':ni==='closed'?' closed-slot':'');
+  const p=document.getElementById('slotPill'),l=document.getElementById('slotLeft');
+  if(ev==='open'){p.textContent='🌆 Evening — OPEN';p.className='slot-pill sp-open';l.textContent=cd(SLOTS.evening,n);}
+  else if(ni==='open'){p.textContent='🌙 Night — OPEN';p.className='slot-pill sp-open';l.textContent=cd(SLOTS.night,n);}
+  else if(ev==='upcoming'){p.textContent='⏰ Evening Upcoming';p.className='slot-pill sp-ev';l.textContent=cd(SLOTS.evening,n);}
+  else if(ni==='upcoming'){p.textContent='⏰ Night Upcoming';p.className='slot-pill sp-ni';l.textContent=cd(SLOTS.night,n);}
+  else{p.textContent='⛔ No Active Slot';p.className='slot-pill sp-close';l.textContent='';}
+}
+
+// ═══ NAV ═══
+function showPage(name,tab){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  if(tab)tab.classList.add('active');
+  if(name==='dashboard')renderDash();
+  if(name==='attendance'){popAttDrops();renderAttTable();}
+  if(name==='leave'){popLvDrops();renderLvHistory();}
+  if(name==='students')renderStudents();
+  if(name==='admin'){renderAdmin();renderELogTable();popAdminDrops();loadAdminForm();}
+}
+
+// ═══ DASHBOARD ═══
+function renderDash(){
+  const lvIds=leaveReqs.filter(l=>l.status==='approved').map(l=>l.sid);
+  let p=0,la=0,ab=0;
+  students.forEach(s=>{if(lvIds.includes(s.id))return;const a=todayAtt[s.id]||{};if(!a.evening&&!a.night){ab++;return;}(a.evening?.late||a.night?.late)?la++:p++;});
+  document.getElementById('s-total').textContent=students.length;
+  document.getElementById('s-present').textContent=p;
+  document.getElementById('s-late').textContent=la;
+  document.getElementById('s-absent').textContent=ab;
+  document.getElementById('s-leave').textContent=lvIds.length;
+  document.getElementById('s-pending').textContent=leaveReqs.filter(l=>l.status==='pending').length;
+  const abL=students.filter(s=>{if(lvIds.includes(s.id))return false;const a=todayAtt[s.id]||{};return!a.evening&&!a.night;});
+  const bn=document.getElementById('alertBanner');
+  if(abL.length){bn.innerHTML=`<div class="alert-d"><div style="font-size:1.4rem">🚨</div><div style="flex:1"><div style="font-weight:700;color:var(--red);font-family:'Rajdhani',sans-serif;letter-spacing:1px">SAFETY ALERT — Unauthorised Absence Detected</div><div style="font-size:0.79rem;color:var(--muted);margin-top:2px">${abL.map(s=>`${s.name} (Room ${s.room})`).join(', ')}</div></div><button class="btn bd bsm" onclick="notifyAllAbsent()">📧 Email All Authorities</button></div>`;}
+  else bn.innerHTML='';
+  const tb=document.getElementById('dashTable');tb.innerHTML='';
+  students.forEach(s=>{
+    const onLv=lvIds.includes(s.id),a=todayAtt[s.id]||{};
+    const init=s.name.split(' ').map(w=>w[0]).join('').slice(0,2);
+    const ev=onLv?'<span class="badge bleave">On Leave</span>':a.evening?`<span class="badge ${a.evening.late?'blate':'bpresent'}">${a.evening.late?'⏰ Late':'✅'}</span>`:'<span class="badge babsent">❌</span>';
+    const ni=onLv?'<span class="badge bleave">On Leave</span>':a.night?`<span class="badge ${a.night.late?'blate':'bpresent'}">${a.night.late?'⏰ Late':'✅'}</span>`:'<span class="badge babsent">❌</span>';
+    const fin=onLv?'<span class="badge bleave">🏠 On Leave</span>':(!a.evening&&!a.night)?'<span class="badge babsent">❌ No Attendance</span>':(a.evening?.late||a.night?.late)?'<span class="badge blate">⏰ Late Entry</span>':'<span class="badge bpresent">✅ Present</span>';
+    tb.innerHTML+=`<tr><td><div class="flex aic g2"><div class="av">${init}</div><span style="font-weight:600">${s.name}</span></div></td><td><code>${s.roll}</code></td><td>${s.room||'—'}</td><td>${ev}</td><td>${ni}</td><td>${fin}</td></tr>`;
+  });
+  renderEFeed();
+}
+
+async function notifyAllAbsent(){
+  const lvIds=leaveReqs.filter(l=>l.status==='approved').map(l=>l.sid);
+  const abL=students.filter(s=>{if(lvIds.includes(s.id))return false;const a=todayAtt[s.id]||{};return!a.evening&&!a.night;});
+  if(!abL.length){toast('✅','All Present','No absent students.','success');return;}
+  for(const s of abL){
+    const subj=`🚨 URGENT: ${s.name} — No Attendance Today`;
+    const body=`Dear Authority,\n\nURGENT SAFETY ALERT from HostelGuard Pro.\n\n━━━━━━━━━━━━━━━━━━━━━━━━\n⚠️ STUDENT ABSENT — NO ATTENDANCE MARKED\n━━━━━━━━━━━━━━━━━━━━━━━━\nName       : ${s.name}\nRoll No    : ${s.roll}\nRoom       : ${s.room||'—'}\nDepartment : ${s.dept||'—'} — ${s.year}\n\nStatus : NOT marked attendance today\nLeave  : NOT on any approved leave\nDate   : ${new Date().toLocaleDateString('en-IN')}\nTime   : ${new Date().toLocaleTimeString('en-IN',{hour12:true})}\n\nImmediate action required. Please verify student's whereabouts.\nParent: ${s.parent} — ${s.parPhone}\n\n— HostelGuard Pro`;
+    const pBody=`Dear ${s.parent},\n\nYour ward ${s.name} (${s.roll}) has NOT marked attendance today and is NOT on approved leave.\n\nPlease contact the warden immediately:\n${auth.warName} — ${auth.warEmail}\n\nDate: ${new Date().toLocaleDateString('en-IN')}\n\n— HostelGuard Pro`;
+    await mail(auth.warEmail,auth.warName,'Warden',subj,body,s);
+    await mail(auth.depEmail,auth.depName,'Dep.Warden',subj,body,s);
+    await mail(s.advEmail,s.adv,'Advisor',subj,body,s);
+    await mail(s.parEmail,s.parent,'Parent',`Your ward ${s.name} — Attendance Alert`,pBody,s);
+  }
+  toast('🚨','Notified',`Emails sent for ${abL.length} absent student(s).`,'danger');
+  renderEFeed();renderELogTable();
+}
+
+// ═══ ATTENDANCE ═══
+function popAttDrops(){['attStudent','manAttStud','pmStud'].forEach(id=>{const el=document.getElementById(id);if(!el)return;el.innerHTML='<option value="">-- Select Student --</option>';students.forEach(s=>el.innerHTML+=`<option value="${s.id}">${s.name} (${s.roll})</option>`);});}
+let fpR=false;
+function doFpScan(){
+  if(fpR)return;
+  const sid=parseInt(document.getElementById('attStudent').value);if(!sid)return;
+  fpR=true;
+  const ic=document.getElementById('fpIcon'),st=document.getElementById('fpStatus'),bx=document.getElementById('fpBox'),bn=document.getElementById('fpBtn');
+  ic.className='fp-icon sa';st.textContent='🔄 Scanning...';st.className='fp-stat fs-scan';bx.className='fp-box scanning';bn.disabled=true;
+  setTimeout(async()=>{
+    const s=students.find(x=>x.id===sid),n=new Date();
+    const c=n.getHours()*60+n.getMinutes(),slot=c<20*60?'evening':'night';
+    ic.className='fp-icon so';st.textContent=`✅ ${s.name} — Verified!`;st.className='fp-stat fs-ok';bx.className='fp-box fp-ok';
+    await markAtt(sid,slot,n,'fingerprint');
+    toast('✅','Attendance Marked',`${s.name} — ${SLOTS[slot].label}`,'success');
+    setTimeout(()=>{ic.className='fp-icon';st.textContent='👆 Ready to Scan';st.className='fp-stat fs-idle';bx.className='fp-box';bn.disabled=false;fpR=false;document.getElementById('attStudent').value='';renderAttTable();renderDash();},2200);
+  },1800);
+}
+async function markAtt(sid,slot,now,method){
+  if(!todayAtt[sid])todayAtt[sid]={};
+  if(todayAtt[sid][slot])return;
+  const sc=SLOTS[slot],c=now.getHours()*60+now.getMinutes(),late=c>(sc.hour*60+sc.min+sc.win);
+  todayAtt[sid][slot]={time:now.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',hour12:true}),late,method};
+  await saveAtt();
+  if(late){
+    const s=students.find(x=>x.id===sid);
+    await mail(auth.warEmail,auth.warName,'Warden',`⏰ Late Entry: ${s.name} — ${sc.label}`,`Dear Warden,\n\n${s.name} (${s.roll}, Room ${s.room}) marked ${sc.label} attendance LATE at ${todayAtt[sid][slot].time}.\n\nPlease take note.\n\n— HostelGuard Pro`,s);
+    toast('⏰','Late Entry',`${s.name} — email sent to Warden.`,'warning');
+  }
+}
+async function doManualAtt(){const sid=parseInt(document.getElementById('manAttStud').value),slot=document.getElementById('manAttSlot').value;if(!sid){toast('⚠️','Select Student','','warning');return;}await markAtt(sid,slot,new Date(),'manual');const s=students.find(x=>x.id===sid);toast('📱','Marked',`${s.name} — ${SLOTS[slot].label}`,'success');renderAttTable();renderDash();}
+function fAtt(f){attF=f;renderAttTable();}
+function renderAttTable(){
+  const tb=document.getElementById('attTable');tb.innerHTML='';
+  const lvIds=leaveReqs.filter(l=>l.status==='approved').map(l=>l.sid);
+  students.forEach(s=>{
+    const onLv=lvIds.includes(s.id),a=todayAtt[s.id]||{};
+    let rs=onLv?'leave':(!a.evening&&!a.night)?'absent':(a.evening?.late||a.night?.late)?'late':'present';
+    if(attF!=='all'&&rs!==attF)return;
+    const init=s.name.split(' ').map(w=>w[0]).join('').slice(0,2);
+    const ev=onLv?'<span class="badge bleave">On Leave</span>':a.evening?`<span class="badge ${a.evening.late?'blate':'bpresent'}">${a.evening.late?'⏰ Late':'✅'}</span>`:'<span class="badge babsent">❌</span>';
+    const ni=onLv?'<span class="badge bleave">On Leave</span>':a.night?`<span class="badge ${a.night.late?'blate':'bpresent'}">${a.night.late?'⏰ Late':'✅'}</span>`:'<span class="badge babsent">❌</span>';
+    const fin=onLv?'<span class="badge bleave">🏠 Leave</span>':rs==='present'?'<span class="badge bpresent">✅ Present</span>':rs==='late'?'<span class="badge blate">⏰ Late</span>':'<span class="badge babsent">❌ No Att.</span>';
+    tb.innerHTML+=`<tr><td><div class="flex aic g2"><div class="av">${init}</div><span style="font-weight:600">${s.name}</span></div></td><td><code>${s.roll}</code></td><td>${s.room||'—'}</td><td>${ev}</td><td style="font-family:'JetBrains Mono',monospace;font-size:0.76rem;color:var(--muted)">${a.evening?.time||'—'}</td><td>${ni}</td><td style="font-family:'JetBrains Mono',monospace;font-size:0.76rem;color:var(--muted)">${a.night?.time||'—'}</td><td>${fin}</td></tr>`;
+  });
+  if(!tb.innerHTML)tb.innerHTML='<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:18px">No records</td></tr>';
+}
+function openPhoneModal(){popAttDrops();document.getElementById('phoneModal').classList.add('open');}
+function closePhoneModal(){document.getElementById('phoneModal').classList.remove('open');}
+async function doPhoneAtt(){const sid=parseInt(document.getElementById('pmStud').value),slot=document.getElementById('pmSlot').value;if(!sid){toast('⚠️','Select Student','','warning');return;}await markAtt(sid,slot,new Date(),'phone');const s=students.find(x=>x.id===sid);toast('📱','Marked',`${s.name} — ${SLOTS[slot].label}`,'success');closePhoneModal();renderAttTable();renderDash();}
+
+// ═══ LEAVE ═══
+function popLvDrops(){const sel=document.getElementById('leaveStud');sel.innerHTML='<option value="">-- Select Student --</option>';students.forEach(s=>sel.innerHTML+=`<option value="${s.id}">${s.name} (${s.roll})</option>`);}
+function onLeaveSelect(){
+  const sid=parseInt(document.getElementById('leaveStud').value),s=students.find(x=>x.id===sid);selLvStud=s||null;
+  const info=document.getElementById('lvStudInfo'),step2=document.getElementById('lv2');
+  if(s){
+    info.style.display='block';
+    info.innerHTML=`<div class="fg"><div>🏠 Room: <strong>${s.room||'—'}</strong></div><div>🎓 ${s.dept} — ${s.year}</div><div>👨‍👩‍👧 Parent: <strong>${s.parent}</strong></div><div>📞 ${s.parPhone}</div><div>📧 Parent: <strong style="color:${s.parEmail?'var(--green)':'var(--red)'}">${s.parEmail||'⚠️ Not set!'}</strong></div><div>👩‍🏫 ${s.adv} · <span style="color:${s.advEmail?'var(--accent)':'var(--red)'}">${s.advEmail||'⚠️ No email!'}</span></div></div>`;
+    document.getElementById('lvParPhone').value=s.parPhone||'';
+    step2.classList.remove('locked');
+    document.getElementById('lvFrom').value=new Date().toISOString().split('T')[0];
+  }else{info.style.display='none';step2.classList.add('locked');}
+}
+async function submitLeave(){
+  if(!selLvStud){toast('⚠️','Select Student','','warning');return;}
+  const from=document.getElementById('lvFrom').value,to=document.getElementById('lvTo').value,reason=document.getElementById('lvReason').value.trim();
+  if(!from||!to||!reason){toast('⚠️','Missing Fields','Fill From Date, To Date and Reason.','warning');return;}
+  if(new Date(to)<new Date(from)){toast('⚠️','Invalid Dates','To date must be after From date.','warning');return;}
+  const req={id:nLid++,sid:selLvStud.id,student:selLvStud.name,roll:selLvStud.roll,room:selLvStud.room,type:document.getElementById('lvType').value,from,to,reason,dest:document.getElementById('lvDest').value,transport:document.getElementById('lvTransport').value,parPhone:document.getElementById('lvParPhone').value,status:'pending',applied:new Date().toLocaleDateString('en-IN'),appliedTime:new Date().toLocaleTimeString('en-IN',{hour12:true})};
+  leaveReqs.push(req);
+  await saveLeaves();
+  const s=selLvStud,subj=`Leave Request: ${s.name} (${s.roll}) — ${req.type}`;
+  const body=`Dear Authority,\n\nA new leave application has been submitted.\n\n━━━━━━━━━━━━━━━━━━━━━━━━\nSTUDENT DETAILS\n━━━━━━━━━━━━━━━━━━━━━━━━\nName        : ${s.name}\nRoll No     : ${s.roll}\nRoom        : ${s.room||'—'}\nDepartment  : ${s.dept||'—'} — ${s.year}\n\n━━━━━━━━━━━━━━━━━━━━━━━━\nLEAVE DETAILS\n━━━━━━━━━━━━━━━━━━━━━━━━\nType        : ${req.type}\nFrom        : ${from}\nTo          : ${to}\nDestination : ${req.dest||'Not specified'}\nTransport   : ${req.transport}\nReason      : ${reason}\nParent Ph   : ${req.parPhone||'—'}\n\nApplied     : ${req.applied} at ${req.appliedTime}\n\nPlease log in to the HostelGuard system to approve or reject.\n\n— HostelGuard Pro`;
+  await mail(auth.depEmail,auth.depName,'Dep.Warden',subj,body,s);
+  await mail(auth.warEmail,auth.warName,'Warden',subj,body,s);
+  await mail(s.advEmail,s.adv,'Class Advisor',subj,body,s);
+  toast('📤','Leave Submitted',`Email sent to Deputy Warden, Warden & Class Advisor.`,'success');
+  resetLeave();renderLvHistory();renderAdmin();renderEFeed();renderELogTable();
+}
+function resetLeave(){selLvStud=null;document.getElementById('leaveStud').value='';document.getElementById('lvStudInfo').style.display='none';document.getElementById('lv2').classList.add('locked');['lvReason','lvFrom','lvTo','lvDest','lvParPhone'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});}
+function renderLvHistory(){
+  const c=document.getElementById('lvHistory');
+  if(!leaveReqs.length){c.innerHTML='<div style="text-align:center;color:var(--muted);padding:28px;font-size:0.82rem">No applications yet</div>';return;}
+  c.innerHTML='';
+  [...leaveReqs].reverse().forEach(l=>{
+    const sb=l.status==='pending'?'<span class="badge bpend">⏳ Pending</span>':l.status==='approved'?'<span class="badge bapprv">✅ Approved</span>':'<span class="badge brej">❌ Rejected</span>';
+    c.innerHTML+=`<div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:13px;margin-bottom:9px"><div class="flex aic jb mb3"><span style="font-weight:700;font-size:0.95rem">${l.student}</span>${sb}</div><div style="font-size:0.78rem;color:var(--muted);line-height:1.9">📋 ${l.type} · 📍 ${l.dest||'—'}<br>📅 ${l.from} → ${l.to} · 🚌 ${l.transport}<br>💬 ${l.reason}<br>🕒 ${l.applied} at ${l.appliedTime}</div></div>`;
+  });
+}
+
+// ═══ STUDENTS ═══
+async function addStudent(){
+  if(students.length>=MAX){toast('⚠️','Full','Max 70 students reached.','warning');return;}
+  const name=document.getElementById('sName').value.trim(),roll=document.getElementById('sRoll').value.trim();
+  if(!name||!roll){toast('⚠️','Required','Name and Roll Number required.','warning');return;}
+  students.push({id:nSid++,name,roll,dept:document.getElementById('sDept').value,year:document.getElementById('sYear').value,room:document.getElementById('sRoom').value,studPhone:document.getElementById('sStudPhone').value,parent:document.getElementById('sParent').value,parPhone:document.getElementById('sParPhone').value,parEmail:document.getElementById('sParEmail').value,adv:document.getElementById('sAdv').value,advPhone:document.getElementById('sAdvPhone').value,advEmail:document.getElementById('sAdvEmail').value});
+  await saveStudents();await saveNSid();
+  clearStudForm();renderStudents();toast('✅','Added',`${name} registered.`,'success');
+}
+function clearStudForm(){['sName','sRoll','sRoom','sDept','sStudPhone','sParent','sParPhone','sParEmail','sAdv','sAdvPhone','sAdvEmail'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});}
+function removeStudent(id){students=students.filter(s=>s.id!==id);saveStudents();renderStudents();toast('🗑️','Removed','','danger');}
+function renderStudents(){
+  const q=(document.getElementById('studSearch')?.value||'').toLowerCase();
+  const tb=document.getElementById('studTable');tb.innerHTML='';
+  document.getElementById('capBar').textContent=`${students.length} / 70`;
+  students.filter(s=>s.name.toLowerCase().includes(q)||s.roll.toLowerCase().includes(q)||(s.room||'').toLowerCase().includes(q)).forEach((s,i)=>{
+    const init=s.name.split(' ').map(w=>w[0]).join('').slice(0,2);
+    tb.innerHTML+=`<tr><td style="color:var(--muted);font-size:0.76rem">${i+1}</td><td><div class="flex aic g2"><div class="av">${init}</div><div><div style="font-weight:600">${s.name}</div><div style="font-size:0.72rem;color:var(--muted)">${s.studPhone||'—'}</div></div></div></td><td><code>${s.roll}</code></td><td>${s.room||'—'}</td><td><div style="font-size:0.79rem">${s.dept||'—'}</div><div style="font-size:0.73rem;color:var(--muted)">${s.year}</div></td><td><div style="font-size:0.79rem">${s.parent||'—'}</div><div style="font-size:0.73rem;color:var(--accent)">${s.parEmail||'⚠️ No email'}</div></td><td><div style="font-size:0.79rem">${s.adv||'—'}</div><div style="font-size:0.73rem;color:var(--accent)">${s.advEmail||'⚠️ No email'}</div></td><td><button class="btn bd bsm" onclick="removeStudent(${s.id})">🗑️</button></td></tr>`;
+  });
+  if(!tb.innerHTML)tb.innerHTML='<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:18px">No students found</td></tr>';
+}
+
+// ═══ ADMIN ═══
+function loadAdminForm(){document.getElementById('ejServiceId').value=eCfg.svc;document.getElementById('ejTemplateId').value=eCfg.tpl;document.getElementById('ejPublicKey').value=eCfg.pub;document.getElementById('emailMode').value=eCfg.mode;document.getElementById('depName').value=auth.depName;document.getElementById('depEmail').value=auth.depEmail;document.getElementById('warName').value=auth.warName;document.getElementById('warEmail').value=auth.warEmail;}
+function saveEmailConfig(){
+  eCfg.svc=document.getElementById('ejServiceId').value.trim();
+  eCfg.tpl=document.getElementById('ejTemplateId').value.trim();
+  eCfg.pub=document.getElementById('ejPublicKey').value.trim();
+  eCfg.mode=document.getElementById('emailMode').value;
+  const badge=document.getElementById('emailBadge'),testBtn=document.getElementById('testEmailBtn'),msg=document.getElementById('cfgMsg');
+  if(eCfg.mode==='real'){
+    if(!eCfg.svc||!eCfg.tpl||!eCfg.pub){msg.style.cssText='display:block;margin-top:11px;padding:9px 13px;border-radius:9px;font-size:0.78rem;background:rgba(255,23,68,0.08);border:1px solid rgba(255,23,68,0.25);color:var(--red)';msg.textContent='⚠️ Please fill all 3 fields: Service ID, Template ID and Public Key.';return;}
+    emailjs.init({publicKey:eCfg.pub});
+    badge.textContent='📧 Email — LIVE';badge.className='email-badge eb-live';testBtn.style.display='inline-flex';
+    msg.style.cssText='display:block;margin-top:11px;padding:9px 13px;border-radius:9px;font-size:0.78rem;background:rgba(0,229,255,0.07);border:1px solid rgba(0,229,255,0.2);color:var(--accent)';
+    msg.textContent='✅ EmailJS configured! Real emails will now be delivered to authority inboxes.';
+    toast('📧','Email LIVE','Real emails will now be sent to authority email addresses!','success');
+  }else{
+    badge.textContent='📧 Email — Demo';badge.className='email-badge eb-demo';testBtn.style.display='none';
+    msg.style.cssText='display:block;margin-top:11px;padding:9px 13px;border-radius:9px;font-size:0.78rem;background:rgba(84,110,122,0.08);border:1px solid var(--muted2);color:var(--muted)';
+    msg.textContent='📝 Demo mode — emails will be logged but not actually sent.';
+    toast('💾','Saved','Email running in demo mode.','info');
+  }
+}
+async function sendTestEmail(){const addr=document.getElementById('testEmailAddr').value.trim();if(!addr||!addr.includes('@')){toast('⚠️','Enter Email','Enter a valid email address.','warning');return;}await mail(addr,'Test','Test','HostelGuard — Email Integration Test','This is a test email from HostelGuard Pro.\n\nYour email integration is working correctly!\n\nReal alerts will now be delivered to authority inboxes whenever:\n• Students are absent without leave\n• Students mark attendance late\n• Leave applications are submitted\n• Leave is approved or rejected\n\n— HostelGuard Pro System',null);toast('🧪','Test Sent',`Test email dispatched to ${addr}`,'success');}
+function saveAuthority(){auth.depName=document.getElementById('depName').value;auth.depEmail=document.getElementById('depEmail').value;auth.warName=document.getElementById('warName').value;auth.warEmail=document.getElementById('warEmail').value;toast('💾','Saved','Authority contacts updated.','success');}
+function popAdminDrops(){const sel=document.getElementById('notifStud');if(!sel)return;sel.innerHTML='<option value="">-- All --</option>';students.forEach(s=>sel.innerHTML+=`<option value="${s.id}">${s.name}</option>`);}
+function renderAdmin(){
+  const pend=leaveReqs.filter(l=>l.status==='pending'),d=document.getElementById('pendingLeaves');
+  if(!pend.length){d.innerHTML='<div style="text-align:center;color:var(--muted);padding:20px;font-size:0.82rem">✅ No pending requests</div>';return;}
+  d.innerHTML='';
+  pend.forEach(l=>{d.innerHTML+=`<div style="background:rgba(255,171,0,0.05);border:1px solid rgba(255,171,0,0.17);border-radius:12px;padding:14px;margin-bottom:10px;display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap"><div style="flex:1;min-width:180px"><div style="font-weight:700;font-family:'Rajdhani',sans-serif;font-size:1rem;margin-bottom:4px">${l.student} — ${l.type}</div><div style="font-size:0.77rem;color:var(--muted);line-height:1.8">📅 ${l.from} to ${l.to} · 📍 ${l.dest||'—'}<br>💬 ${l.reason}<br>🚌 ${l.transport} · 📞 ${l.parPhone||'—'}</div></div><div style="display:flex;flex-direction:column;gap:7px;flex-shrink:0"><button class="btn bs bsm" onclick="openLvModal(${l.id},'approve')">✅ Approve</button><button class="btn bd bsm" onclick="openLvModal(${l.id},'reject')">❌ Reject</button></div></div>`;});
+}
+function openLvModal(id,action){curLvId=id;const l=leaveReqs.find(x=>x.id===id);document.getElementById('lvModalTitle').textContent=action==='approve'?'✅ Approve Leave?':'❌ Reject Leave?';document.getElementById('lvModalBody').innerHTML=`<strong>${l.student}</strong> · Room ${l.room||'—'}<br>Type: ${l.type}<br>Period: ${l.from} → ${l.to}<br>Destination: ${l.dest||'—'}<br>Reason: ${l.reason}`;document.getElementById('lvModal').classList.add('open');}
+function closeLvModal(){document.getElementById('lvModal').classList.remove('open');}
+async function approveLeave(){
+  const l=leaveReqs.find(x=>x.id===curLvId);if(!l)return;l.status='approved';
+  await saveLeaves();
+  const s=students.find(x=>x.id===l.sid);
+  const subj=`✅ Leave APPROVED: ${l.student} (${l.from} to ${l.to})`;
+  const body=`Dear Authority,\n\nLeave has been APPROVED for:\n\nStudent    : ${l.student} (${l.roll})\nRoom       : ${l.room||'—'}\nLeave Type : ${l.type}\nPeriod     : ${l.from} to ${l.to}\nDestination: ${l.dest||'N/A'}\nTransport  : ${l.transport}\n\n— HostelGuard Pro`;
+  const pSubj=`✅ Leave Approved — ${l.student}`;
+  const pBody=`Dear ${s?.parent},\n\n${l.student}'s leave has been APPROVED.\n\nPeriod: ${l.from} to ${l.to}\nDestination: ${l.dest||'N/A'}\nTravel: ${l.transport}\n\nPlease ensure safe travel and timely return.\n\n— HostelGuard Pro`;
+  await mail(auth.warEmail,auth.warName,'Warden',subj,body,s);
+  await mail(auth.depEmail,auth.depName,'Dep.Warden',subj,body,s);
+  await mail(s?.parEmail,s?.parent,'Parent',pSubj,pBody,s);
+  toast('✅','Approved',`${l.student}'s leave approved. Emails sent.`,'success');
+  closeLvModal();renderAdmin();renderELogTable();renderDash();renderLvHistory();
+}
+async function rejectLeave(){
+  const l=leaveReqs.find(x=>x.id===curLvId);if(!l)return;l.status='rejected';
+  await saveLeaves();
+  const s=students.find(x=>x.id===l.sid);
+  await mail(s?.advEmail,s?.adv,'Advisor',`Leave REJECTED: ${l.student}`,`Dear ${s?.adv},\n\n${l.student}'s leave for ${l.from} to ${l.to} has been REJECTED.\n\n— HostelGuard Pro`,s);
+  await mail(s?.parEmail,s?.parent,'Parent',`❌ Leave Rejected — ${l.student}`,`Dear ${s?.parent},\n\n${l.student}'s leave (${l.from} to ${l.to}) has been REJECTED.\n\nContact: ${auth.warName} — ${auth.warEmail}\n\n— HostelGuard Pro`,s);
+  toast('❌','Rejected',`${l.student}'s leave rejected. Emails sent.`,'danger');
+  closeLvModal();renderAdmin();renderELogTable();renderLvHistory();
+}
+async function sendManualEmail(){
+  const target=document.getElementById('notifTarget').value,sid=document.getElementById('notifStud').value;
+  const subject=document.getElementById('notifSubject').value.trim()||'HostelGuard Notification';
+  const msg=document.getElementById('notifMsg').value.trim();
+  if(!msg){toast('⚠️','Empty','Enter a message.','warning');return;}
+  const s=sid?students.find(x=>x.id===parseInt(sid)):null;
+  const targets=[];
+  if(target==='all'||target==='warden')   targets.push({em:auth.warEmail,name:auth.warName,role:'Warden'});
+  if(target==='all'||target==='deputy')   targets.push({em:auth.depEmail,name:auth.depName,role:'Dep.Warden'});
+  if((target==='all'||target==='adviser')&&s?.advEmail) targets.push({em:s.advEmail,name:s.adv,role:'Advisor'});
+  if(target==='parent'&&s?.parEmail)      targets.push({em:s.parEmail,name:s.parent,role:'Parent'});
+  for(const t of targets) await mail(t.em,t.name,t.role,subject,msg,s);
+  toast('📨','Sent',`Email dispatched to ${targets.length} recipient(s).`,'success');
+  document.getElementById('notifMsg').value='';renderELogTable();
+}
+
+// ═══ EMAIL ENGINE ═══
+async function mail(toEmail,toName,role,subject,message,student){
+  const clean=(toEmail||'').trim();
+  const entry={id:nEid++,time:new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',hour12:true}),student:student?student.name:'General',recipient:role,email:clean,subject,status:'⏳ Sending...'};
+  eLogs.unshift(entry);renderEFeed();renderELogTable();
+  if(!clean||!clean.includes('@')){entry.status='⚠️ No email set';renderEFeed();renderELogTable();return;}
+  if(eCfg.mode==='real'&&eCfg.svc&&eCfg.tpl&&eCfg.pub){
+    try{
+      const r=await emailjs.send(eCfg.svc,eCfg.tpl,{to_email:clean,to_name:toName||role,from_name:'HostelGuard Pro',subject,message},{publicKey:eCfg.pub});
+      entry.status=r.status===200?'✅ Delivered':`❌ Status ${r.status}`;
+      if(r.status===200)toast('📧','Email Sent',`Delivered to ${clean}`,'success');
+    }catch(err){
+      entry.status=`❌ ${err.text||err.message||'EmailJS error'}`;
+      console.error('EmailJS:',err);
+      toast('❌','Email Failed',`${err.text||err.message||'Check EmailJS config.'}`,'danger');
+    }
+  }else if(eCfg.mode==='real'){
+    entry.status='⚠️ EmailJS not configured';
+    toast('⚠️','Not Configured','Admin → Email Config → Enter EmailJS credentials.','warning');
+  }else{
+    entry.status='📝 Demo (not sent)';
+  }
+  renderEFeed();renderELogTable();
+}
+
+// ═══ EMAIL LOG UI ═══
+function renderEFeed(){
+  const f=document.getElementById('emailFeed');if(!f)return;
+  if(!eLogs.length){f.innerHTML='<div style="text-align:center;color:var(--muted);padding:18px;font-size:0.81rem">No emails sent yet</div>';return;}
+  f.innerHTML='';
+  eLogs.slice(0,8).forEach(l=>{
+    const ok=l.status.includes('✅'),fail=l.status.includes('❌')||l.status.includes('⚠️');
+    f.innerHTML+=`<div class="elog ${ok?'elog-ok':fail?'elog-fail':''}"><div style="font-size:1rem;flex-shrink:0;margin-top:1px">${ok?'✉️':fail?'⚠️':'⏳'}</div><div style="flex:1"><div style="font-weight:600;margin-bottom:1px">${l.recipient} <span style="color:var(--muted);font-size:0.72rem">${l.email||'—'}</span></div><div style="color:var(--accent);font-size:0.74rem;margin-bottom:2px">📋 ${l.subject}</div><div style="font-size:0.7rem;color:${ok?'var(--green)':fail?'var(--red)':'var(--muted)'}">${l.status}</div></div><div style="font-size:0.69rem;color:var(--muted);white-space:nowrap;flex-shrink:0">${l.time}</div></div>`;
+  });
+}
+function renderELogTable(){
+  const tb=document.getElementById('emailLogTable');if(!tb)return;
+  if(!eLogs.length){tb.innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:18px">No emails sent yet</td></tr>';return;}
+  tb.innerHTML='';
+  eLogs.slice(0,60).forEach(l=>{
+    const ok=l.status.includes('✅');
+    tb.innerHTML+=`<tr><td style="font-family:'JetBrains Mono',monospace;font-size:0.74rem;color:var(--muted);white-space:nowrap">${l.time}</td><td style="font-weight:600;font-size:0.82rem">${l.student}</td><td>${l.recipient}</td><td style="font-family:'JetBrains Mono',monospace;font-size:0.74rem;color:var(--accent)">${l.email||'—'}</td><td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:0.77rem">${l.subject}</td><td><span style="font-size:0.71rem;font-weight:700;padding:2px 9px;border-radius:8px;background:${ok?'rgba(0,229,255,0.1)':'rgba(255,171,0,0.08)'};color:${ok?'var(--accent)':'var(--yellow)'};border:1px solid ${ok?'rgba(0,229,255,0.25)':'rgba(255,171,0,0.2)'}">${l.status}</span></td></tr>`;
+  });
+}
+
+// ═══ TOAST ═══
+function toast(icon,title,body,type='info'){
+  const colors={info:'var(--accent)',success:'var(--green)',warning:'var(--yellow)',danger:'var(--red)'};
+  const t=document.createElement('div');t.className='toast';t.style.borderLeft=`3px solid ${colors[type]}`;
+  t.innerHTML=`<div class="t-ic">${icon}</div><div style="flex:1"><div class="t-ti">${title}</div><div class="t-bd">${body}</div></div><button class="t-cl" onclick="this.parentElement.remove()">✕</button>`;
+  document.getElementById('toast-area').appendChild(t);
+  setTimeout(()=>{t.style.opacity='0';t.style.transition='opacity 0.4s';setTimeout(()=>t.remove(),400);},5500);
+}
+
+// ═══ LOGIN ═══
+let currentUser = null; // { role:'teacher'|'student', studentId: null|number }
+let selectedRole = 'teacher';
+
+// Generate student credentials: username = student index (1-70), password = '1234'
+function selectRole(role) {
+  selectedRole = role;
+  document.getElementById('roleTeacher').classList.toggle('selected', role==='teacher');
+  document.getElementById('roleStudent').classList.toggle('selected', role==='student');
+  const hint = document.getElementById('loginHint');
+  const unLabel = document.getElementById('unLabel');
+  document.getElementById('loginUser').value = '';
+  document.getElementById('loginPass').value = '';
+  document.getElementById('loginErr').classList.remove('show');
+  if(role==='teacher'){
+    unLabel.textContent = 'RIT Username';
+    document.getElementById('loginUser').placeholder = 'Enter your RIT username';
+    hint.innerHTML = '👩‍🏫 <strong>Teacher login</strong> — Enter any RIT username &nbsp;|&nbsp; Password: <code style="background:rgba(0,229,255,0.1);padding:1px 6px;border-radius:4px;color:var(--accent)">rit@teacher</code>';
+  } else {
+    unLabel.textContent = 'Student Number (1 – 70)';
+    document.getElementById('loginUser').placeholder = 'Enter your student number (1 to 70)';
+    hint.innerHTML = '🎓 <strong>Student login</strong> — Enter your student number (1–70) &nbsp;|&nbsp; Password: <code style="background:rgba(0,229,255,0.1);padding:1px 6px;border-radius:4px;color:var(--accent)">1234</code>';
+  }
+}
+
+function doLogin() {
+  const user = document.getElementById('loginUser').value.trim();
+  const pass = document.getElementById('loginPass').value.trim();
+  const err = document.getElementById('loginErr');
+  err.classList.remove('show');
+
+  if (selectedRole === 'teacher') {
+    // Any non-empty RIT username + password 'rit@teacher'
+    if (!user || pass !== 'rit@teacher') { err.classList.add('show'); return; }
+    currentUser = { role: 'teacher' };
+    document.getElementById('loginScreen').style.display = 'none';
+    document.querySelector('nav').style.display = 'flex';
+    renderDash(); renderStudents();
+    toast('👩‍🏫','Welcome, Teacher','Full admin access granted.','success');
+  } else {
+    // Student: username = number 1-70, password = '1234'
+    const num = parseInt(user);
+    if (isNaN(num) || num < 1 || num > 70 || pass !== '1234') { err.classList.add('show'); return; }
+    // Check if student exists at that index
+    if (num > students.length) { err.textContent = `❌ Student #${num} not yet registered. Contact warden.`; err.classList.add('show'); return; }
+    const s = students[num - 1];
+    currentUser = { role: 'student', studentId: s.id };
+    document.getElementById('loginScreen').style.display = 'none';
+    // Show student portal
+    document.getElementById('studentPortal').style.display = 'block';
+    document.getElementById('stuNav').style.display = 'flex';
+    document.getElementById('stuNavName').textContent = `👤 ${s.name}`;
+    renderStudentPortal(s.id);
+    toast('🎓',`Welcome, ${s.name}!`,'Your hostel dashboard is ready.','success');
+  }
+}
+
+function doLogout() {
+  currentUser = null;
+  selectedRole = 'teacher';
+  // Reset everything
+  document.getElementById('loginScreen').style.display = 'flex';
+  document.getElementById('studentPortal').style.display = 'none';
+  document.getElementById('stuNav').style.display = 'none';
+  document.querySelector('nav').style.display = 'none';
+  document.getElementById('loginUser').value = '';
+  document.getElementById('loginPass').value = '';
+  document.getElementById('loginErr').classList.remove('show');
+  selectRole('teacher');
+}
+
+// ═══ STUDENT PORTAL RENDER ═══
+function showStuPage(name, tab) {
+  document.querySelectorAll('.stu-page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.stu-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('stu-page-' + name).classList.add('active');
+  if (tab) tab.classList.add('active');
+  if (!currentUser) return;
+  renderStudentPortal(currentUser.studentId);
+}
+
+function renderStudentPortal(sid) {
+  const s = students.find(x => x.id === sid);
+  if (!s) return;
+
+  const att = todayAtt[sid] || {};
+  const myLeaves = leaveReqs.filter(l => l.sid === sid);
+  const approvedLeaves = myLeaves.filter(l => l.status === 'approved');
+  const pendingLeaves  = myLeaves.filter(l => l.status === 'pending');
+  const rejectedLeaves = myLeaves.filter(l => l.status === 'rejected');
+
+  // Count attendance from todayAtt (for demo we have today only; in real app this would be historical)
+  const evPresent  = att.evening && !att.evening.late ? 1 : 0;
+  const evLate     = att.evening?.late ? 1 : 0;
+  const evAbsent   = (!att.evening) ? 1 : 0;
+  const niPresent  = att.night && !att.night.late ? 1 : 0;
+  const niLate     = att.night?.late ? 1 : 0;
+  const niAbsent   = (!att.night) ? 1 : 0;
+
+  // Total sessions considered (2 today)
+  const totalSessions = 2;
+  const presentCount = evPresent + niPresent;
+  const lateCount    = evLate + niLate;
+  const absentCount  = evAbsent + niAbsent;
+  const leaveDays    = approvedLeaves.reduce((acc, l) => {
+    const d = Math.max(1, Math.ceil((new Date(l.to) - new Date(l.from)) / 86400000) + 1);
+    return acc + d;
+  }, 0);
+
+  // Hero
+  const init = s.name.split(' ').map(w => w[0]).join('').slice(0, 2);
+  document.getElementById('stuHero').innerHTML = `
+    <div class="student-avatar-lg">${init}</div>
+    <div class="student-hero-info">
+      <div class="student-hero-name">${s.name}</div>
+      <div class="student-hero-meta">
+        👩‍🏫 Class Advisor: <strong>${s.adv || '—'}</strong><br>
+        📞 Parent: ${s.parent} &nbsp;·&nbsp; ${s.parPhone}
+      </div>
+      <div class="student-hero-badges">
+        <span class="shb shb-roll">📋 ${s.roll}</span>
+        <span class="shb shb-room">🏠 Room ${s.room || '—'}</span>
+        <span class="shb shb-dept">🎓 ${s.dept} · ${s.year}</span>
+      </div>
+    </div>`;
+
+  // Stats
+  document.getElementById('stuStats').innerHTML = `
+    <div class="st-stat" style="color:var(--green)"><div class="st-stat-num">${presentCount}</div><div class="st-stat-lbl">Present Sessions</div></div>
+    <div class="st-stat" style="color:var(--pink)"><div class="st-stat-num">${lateCount}</div><div class="st-stat-lbl">Late Entries</div></div>
+    <div class="st-stat" style="color:var(--red)"><div class="st-stat-num">${absentCount}</div><div class="st-stat-lbl">Absent Sessions</div></div>
+    <div class="st-stat" style="color:var(--yellow)"><div class="st-stat-num">${leaveDays}</div><div class="st-stat-lbl">Leave Days Approved</div></div>
+    <div class="st-stat" style="color:var(--purple)"><div class="st-stat-num">${pendingLeaves.length}</div><div class="st-stat-lbl">Pending Requests</div></div>
+    <div class="st-stat" style="color:var(--accent)"><div class="st-stat-num">${myLeaves.length}</div><div class="st-stat-lbl">Total Applications</div></div>`;
+
+  // Attendance summary
+  const pct = totalSessions > 0 ? Math.round(((presentCount + lateCount) / totalSessions) * 100) : 0;
+  const pctColor = pct >= 75 ? 'var(--green)' : pct >= 50 ? 'var(--yellow)' : 'var(--red)';
+  document.getElementById('stuAttSummary').innerHTML = `
+    <div style="display:flex;align-items:center;gap:16px;margin-bottom:14px;flex-wrap:wrap">
+      <div style="font-family:'Rajdhani',sans-serif;font-size:3rem;font-weight:700;color:${pctColor};line-height:1">${pct}%</div>
+      <div style="flex:1;min-width:200px">
+        <div style="font-size:0.82rem;color:var(--muted);margin-bottom:6px">Overall attendance rate (${presentCount + lateCount} of ${totalSessions} sessions marked)</div>
+        <div class="progress-bar-wrap"><div class="progress-bar" style="width:${pct}%;background:${pctColor}"></div></div>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px">
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px;text-align:center">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:0.85rem;color:var(--green);font-weight:600">Evening 7PM</div>
+        <div style="margin-top:6px">${att.evening ? `<span class="badge ${att.evening.late ? 'blate' : 'bpresent'}">${att.evening.late ? '⏰ Late' : '✅ Present'}</span>` : '<span class="badge babsent">❌ Absent</span>'}</div>
+        <div style="font-size:0.73rem;color:var(--muted);margin-top:4px">${att.evening?.time || '—'}</div>
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px;text-align:center">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:0.85rem;color:#cc66ff;font-weight:600">Night 9PM</div>
+        <div style="margin-top:6px">${att.night ? `<span class="badge ${att.night.late ? 'blate' : 'bpresent'}">${att.night.late ? '⏰ Late' : '✅ Present'}</span>` : '<span class="badge babsent">❌ Absent</span>'}</div>
+        <div style="font-size:0.73rem;color:var(--muted);margin-top:4px">${att.night?.time || '—'}</div>
+      </div>
+    </div>`;
+
+  // Today's status
+  const todayStatus = (!att.evening && !att.night) ? `<div style="display:flex;align-items:center;gap:12px;padding:14px;background:rgba(255,23,68,0.07);border:1px solid rgba(255,23,68,0.2);border-radius:12px"><div style="font-size:1.5rem">❌</div><div><div style="font-weight:600;color:var(--red)">No attendance marked today</div><div style="font-size:0.8rem;color:var(--muted);margin-top:2px">Please mark attendance at 7PM (Evening) and 9PM (Night)</div></div></div>` :
+    `<div style="font-size:0.82rem;color:var(--muted);line-height:1.8">
+      <div>🌆 Evening 7PM: ${att.evening ? `<strong style="color:${att.evening.late ? 'var(--pink)' : 'var(--green)'}">${att.evening.late ? '⏰ Late' : '✅ Present'}</strong> at ${att.evening.time}` : '<strong style="color:var(--red)">❌ Absent</strong>'}</div>
+      <div>🌙 Night 9PM: ${att.night ? `<strong style="color:${att.night.late ? 'var(--pink)' : 'var(--green)'}">${att.night.late ? '⏰ Late' : '✅ Present'}</strong> at ${att.night.time}` : '<strong style="color:var(--red)">❌ Absent</strong>'}</div>
+    </div>`;
+  document.getElementById('stuTodayAtt').innerHTML = todayStatus;
+
+  // Recent leaves on dashboard
+  const recentLv = document.getElementById('stuRecentLeaves');
+  if (!myLeaves.length) {
+    recentLv.innerHTML = '<div style="text-align:center;color:var(--muted);padding:20px;font-size:0.83rem">No leave applications yet — Apply from the Leave tab</div>';
+  } else {
+    recentLv.innerHTML = '';
+    [...myLeaves].reverse().slice(0, 5).forEach(l => renderLvItem(recentLv, l, s));
+  }
+
+  // Attendance page
+  if (document.getElementById('stuAttToday2')) {
+    document.getElementById('stuAttToday2').innerHTML = todayStatus;
+  }
+  const attStats = document.getElementById('stuAttStats');
+  if (attStats) {
+    attStats.innerHTML = `
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px">
+        <div style="background:var(--surface);border:1px solid rgba(0,230,118,0.2);border-radius:11px;padding:14px;text-align:center">
+          <div style="font-family:'Rajdhani',sans-serif;font-size:1.8rem;font-weight:700;color:var(--green)">${presentCount}</div>
+          <div style="font-size:0.75rem;color:var(--muted);margin-top:3px">✅ Present Sessions</div>
+        </div>
+        <div style="background:var(--surface);border:1px solid rgba(240,98,146,0.2);border-radius:11px;padding:14px;text-align:center">
+          <div style="font-family:'Rajdhani',sans-serif;font-size:1.8rem;font-weight:700;color:var(--pink)">${lateCount}</div>
+          <div style="font-size:0.75rem;color:var(--muted);margin-top:3px">⏰ Late Entries</div>
+        </div>
+        <div style="background:var(--surface);border:1px solid rgba(255,23,68,0.2);border-radius:11px;padding:14px;text-align:center">
+          <div style="font-family:'Rajdhani',sans-serif;font-size:1.8rem;font-weight:700;color:var(--red)">${absentCount}</div>
+          <div style="font-size:0.75rem;color:var(--muted);margin-top:3px">❌ Absent Sessions</div>
+        </div>
+        <div style="background:var(--surface);border:1px solid rgba(0,229,255,0.2);border-radius:11px;padding:14px;text-align:center">
+          <div style="font-family:'Rajdhani',sans-serif;font-size:1.8rem;font-weight:700;color:${pctColor}">${pct}%</div>
+          <div style="font-size:0.75rem;color:var(--muted);margin-top:3px">📊 Attendance Rate</div>
+        </div>
+      </div>`;
+  }
+  const attLog = document.getElementById('stuAttFullLog');
+  if (attLog) {
+    if (!att.evening && !att.night) {
+      attLog.innerHTML = '<div style="text-align:center;color:var(--muted);padding:20px;font-size:0.83rem">No attendance records yet. Records appear after each session.</div>';
+    } else {
+      attLog.innerHTML = `
+        <div class="att-day-row"><div style="font-family:'JetBrains Mono',monospace;font-size:0.8rem;color:var(--muted);flex-shrink:0">${new Date().toLocaleDateString('en-IN')}</div><div style="font-size:0.8rem;color:var(--muted);flex-shrink:0">🌆 Evening</div>${att.evening ? `<span class="badge ${att.evening.late?'blate':'bpresent'}">${att.evening.late?'⏰ Late':'✅ Present'}</span><span style="font-size:0.75rem;color:var(--muted)">${att.evening.time}</span>` : '<span class="badge babsent">❌ Absent</span>'}</div>
+        ${att.night ? `<div class="att-day-row"><div style="font-family:'JetBrains Mono',monospace;font-size:0.8rem;color:var(--muted);flex-shrink:0">${new Date().toLocaleDateString('en-IN')}</div><div style="font-size:0.8rem;color:var(--muted);flex-shrink:0">🌙 Night</div><span class="badge ${att.night.late?'blate':'bpresent'}">${att.night.late?'⏰ Late':'✅ Present'}</span><span style="font-size:0.75rem;color:var(--muted)">${att.night.time}</span></div>` : ''}`;
+    }
+  }
+
+  // Leave history page
+  const lvHistory = document.getElementById('stuLeaveHistory');
+  if (lvHistory) {
+    if (!myLeaves.length) {
+      lvHistory.innerHTML = '<div style="text-align:center;color:var(--muted);padding:24px;font-size:0.83rem">No leave applications yet</div>';
+    } else {
+      lvHistory.innerHTML = '';
+      [...myLeaves].reverse().forEach(l => renderLvItem(lvHistory, l, s));
+    }
+  }
+
+  // Pre-fill leave form dates
+  const lvFrom = document.getElementById('stuLvFrom');
+  if (lvFrom && !lvFrom.value) lvFrom.value = new Date().toISOString().split('T')[0];
+}
+
+function renderLvItem(container, l, s) {
+  const statusClass = l.status === 'pending' ? 'lcs-pending' : l.status === 'approved' ? 'lcs-approved' : 'lcs-rejected';
+  const statusText  = l.status === 'pending' ? '⏳ Awaiting Approval' : l.status === 'approved' ? '✅ Approved' : '❌ Rejected';
+  const statusNote  = l.status === 'pending'
+    ? '<div style="margin-top:8px;padding:7px 10px;background:rgba(255,171,0,0.07);border:1px solid rgba(255,171,0,0.2);border-radius:8px;font-size:0.76rem;color:var(--yellow)">⏳ Your leave is pending approval from the warden. You will be notified via email once a decision is made.</div>'
+    : l.status === 'approved'
+    ? '<div style="margin-top:8px;padding:7px 10px;background:rgba(0,230,118,0.07);border:1px solid rgba(0,230,118,0.2);border-radius:8px;font-size:0.76rem;color:var(--green)">✅ Your leave has been approved. Have a safe trip!</div>'
+    : '<div style="margin-top:8px;padding:7px 10px;background:rgba(255,23,68,0.07);border:1px solid rgba(255,23,68,0.2);border-radius:8px;font-size:0.76rem;color:var(--red)">❌ Your leave has been rejected. Please contact your class advisor for more details.</div>';
+
+  container.innerHTML += `
+    <div class="leave-card-item">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;flex-wrap:wrap;gap:8px">
+        <div style="font-weight:700;font-size:0.95rem">${l.type}</div>
+        <span class="lcstatus ${statusClass}">${statusText}</span>
+      </div>
+      <div style="font-size:0.79rem;color:var(--muted);line-height:1.9">
+        📅 <strong style="color:var(--text)">${l.from}</strong> → <strong style="color:var(--text)">${l.to}</strong><br>
+        📍 ${l.dest || '—'} &nbsp;·&nbsp; 🚌 ${l.transport}<br>
+        💬 ${l.reason}<br>
+        🕒 Applied: ${l.applied} at ${l.appliedTime}
+      </div>
+      ${statusNote}
+    </div>`;
+}
+
+async function stuSubmitLeave() {
+  if (!currentUser || currentUser.role !== 'student') return;
+  const s = students.find(x => x.id === currentUser.studentId);
+  if (!s) return;
+
+  const from    = document.getElementById('stuLvFrom').value;
+  const to      = document.getElementById('stuLvTo').value;
+  const reason  = document.getElementById('stuLvReason').value.trim();
+  const dest    = document.getElementById('stuLvDest').value.trim();
+
+  if (!from || !to || !reason || !dest) { toast('⚠️','Missing Fields','Please fill all required fields.','warning'); return; }
+  if (new Date(to) < new Date(from)) { toast('⚠️','Invalid Dates','To date must be after From date.','warning'); return; }
+
+  const req = {
+    id: nLid++, sid: s.id, student: s.name, roll: s.roll, room: s.room,
+    type: document.getElementById('stuLvType').value, from, to, reason, dest,
+    transport: document.getElementById('stuLvTransport').value,
+    parPhone: s.parPhone, status: 'pending',
+    applied: new Date().toLocaleDateString('en-IN'),
+    appliedTime: new Date().toLocaleTimeString('en-IN', { hour12: true })
+  };
+  leaveReqs.push(req);
+  await saveLeaves();
+
+  const subj = `Leave Request: ${s.name} (${s.roll}) — ${req.type}`;
+  const body  = `Dear Authority,\n\nA new leave application has been submitted.\n\n━━━━━━━━━━━━━━━━━━━━━━━━\nSTUDENT DETAILS\n━━━━━━━━━━━━━━━━━━━━━━━━\nName        : ${s.name}\nRoll No     : ${s.roll}\nRoom        : ${s.room || '—'}\nDepartment  : ${s.dept || '—'} — ${s.year}\n\n━━━━━━━━━━━━━━━━━━━━━━━━\nLEAVE DETAILS\n━━━━━━━━━━━━━━━━━━━━━━━━\nType        : ${req.type}\nFrom        : ${from}\nTo          : ${to}\nDestination : ${dest}\nTransport   : ${req.transport}\nReason      : ${reason}\nParent Ph   : ${s.parPhone || '—'}\n\nApplied     : ${req.applied} at ${req.appliedTime}\n\nPlease log in to HostelGuard Pro to approve or reject.\n\n— HostelGuard Pro`;
+
+  await mail(auth.depEmail, auth.depName, 'Dep.Warden', subj, body, s);
+  await mail(auth.warEmail, auth.warName, 'Warden',     subj, body, s);
+  await mail(s.advEmail,    s.adv,        'Advisor',    subj, body, s);
+
+  toast('📤','Leave Submitted!',`Your application has been sent for approval. Email notified to all authorities.`,'success');
+
+  // Clear form
+  ['stuLvReason','stuLvDest'].forEach(id => { const e=document.getElementById(id); if(e) e.value=''; });
+
+  // Re-render
+  renderStudentPortal(s.id);
+}
+
+// ═══ INIT ═══
+(function(){
+  // Hide main nav and app initially — show only login
+  document.querySelector('nav').style.display = 'none';
+  renderStudents(); // pre-populate students array
+  setTimeout(()=>{
+    // Just ready — no toast on login screen
+  }, 100);
+})();
+</script>
+</body>
+</html>
